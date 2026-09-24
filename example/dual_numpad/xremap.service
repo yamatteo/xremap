@@ -1,0 +1,13 @@
+[Unit]
+Description=xremap key remapper
+After=default.target
+
+[Service]
+ExecStart=/usr/local/bin/xremap --output-device-name xremap-numpads --watch --device "SIGMACHIP" %h/.config/xremap/config.yml
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

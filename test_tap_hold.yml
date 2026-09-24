@@ -1,0 +1,7 @@
+experimental_map:
+  - remap:
+      capslock:
+        tap_hold_next_release:
+          tap: esc         # Tap Capslock -> Esc
+          hold: leftshift   # Hold Capslock (with another key) -> Ctrl
+          timeout: 200     # After 200ms alone -> Ctrl

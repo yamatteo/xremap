@@ -1,0 +1,48 @@
+experimental_map:
+  - remap:
+      A:
+        tap_hold_next_release:
+          tap: A
+          hold: LEFTMETA
+          timeout: 200
+      R:
+        tap_hold_next_release:
+          tap: R
+          hold: LEFTALT
+          timeout: 200
+      S:
+        tap_hold_next_release:
+          tap: S
+          hold: LEFTSHIFT
+          timeout: 200
+      T:
+        tap_hold_next_release:
+          tap: T
+          hold: LEFTCTRL
+          timeout: 200
+
+      N:
+        tap_hold_next_release:
+          tap: N
+          hold: RIGHTCTRL
+          timeout: 200
+      E:
+        tap_hold_next_release:
+          tap: E
+          hold: RIGHTSHIFT
+          timeout: 200
+      I:
+        tap_hold_next_release:
+          tap: I
+          hold: RIGHTALT
+          timeout: 200
+      O:
+        tap_hold_next_release:
+          tap: O
+          hold: RIGHTMETA
+          timeout: 200
+
+      # D and H are the innermost home-row keys (Colemak-DH thumb-adjacent
+      # index keys) and intentionally get no hold modifier ("Nothing" in the
+      # Meta-Alt-Shift-Ctrl-Nothing | Nothing-Ctrl-Shift-Alt-Meta layout), so
+      # they are left out of experimental_map and pass through untouched.

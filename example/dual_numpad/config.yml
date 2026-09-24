@@ -1,0 +1,148 @@
+modmap:
+  - name: base_left
+    device:
+      only:
+        - /dev/input/by-id/numpad-left-kbd
+        - /dev/input/by-id/numpad-left-consumer
+    remap:
+      KP0: TAB
+      KP1: Q
+      KP4: W
+      KP7: F
+      NUMLOCK: P
+      HOMEPAGE: G
+
+      SPACE: BACKSPACE
+      KP2: A
+      KP5: R
+      KP8: S
+      KPSLASH: T
+      TAB: D
+
+      KPDOT:
+        skip_key_event: true
+        press: { set_mode: numbers }
+        release: { set_mode: default }
+      KP3: Z
+      KP6: X
+      KP9: C
+      KPASTERISK: V
+      MAIL: B
+
+      KPENTER: ESC
+      KPPLUS: ESC
+      KPMINUS: ESC
+      BACKSPACE: ESC
+      CALC: SPACE
+    mode: default
+
+  - name: numbers_left
+    device:
+      only:
+        - /dev/input/by-id/numpad-left-kbd
+        - /dev/input/by-id/numpad-left-consumer
+    remap:
+      KP0: TAB
+      KP1: Q
+      KP4: W
+      KP7: F
+      NUMLOCK: P
+      HOMEPAGE: G
+
+      SPACE: BACKSPACE
+      KP2: A
+      KP5: R
+      KP8: S
+      KPSLASH: T
+      TAB: D
+
+      KPDOT:
+        skip_key_event: true
+        release: { set_mode: default }
+      KP3: Z
+      KP6: X
+      KP9: C
+      KPASTERISK: V
+      MAIL: B
+
+      KPENTER: ESC
+      KPPLUS: ESC
+      KPMINUS: ESC
+      BACKSPACE: ESC
+      CALC: SPACE
+    mode: numbers
+
+  - name: base_right
+    device:
+      only:
+        - /dev/input/by-id/numpad-right-kbd
+        - /dev/input/by-id/numpad-right-consumer
+    remap:
+      CALC: J
+      BACKSPACE: L
+      KPMINUS: U
+      KPPLUS: Y
+      KPENTER: SEMICOLON
+      # KPENTER continuation
+
+      MAIL: H
+      KPASTERISK: N
+      KP9: E
+      KP6: I
+      KP3: O
+      KPDOT: DELETE
+
+      TAB: K
+      KPSLASH: M
+      KP8: COMMA
+      KP5: DOT
+      KP2: SLASH
+      SPACE:
+        skip_key_event: true
+        press: { set_mode: numbers }
+        release: { set_mode: default }
+
+      HOMEPAGE: ENTER
+      NUMLOCK: P
+      KP7: F
+      KP4: W
+      KP1: Q
+      KP0: TAB
+    mode: default
+
+  - name: numbers_right
+    device:
+      only:
+        - /dev/input/by-id/numpad-right-kbd
+        - /dev/input/by-id/numpad-right-consumer
+    remap:
+      CALC: J
+      BACKSPACE: KEY_7
+      KPMINUS: KEY_8
+      KPPLUS: KEY_9
+      KPENTER: SEMICOLON
+      # KPENTER continuation
+
+      MAIL: H
+      KPASTERISK: KEY_4
+      KP9: KEY_5
+      KP6: KEY_6
+      KP3: O
+      KPDOT: DELETE
+
+      TAB: K
+      KPSLASH: KEY_1
+      KP8: KEY_2
+      KP5: KEY_3
+      KP2: SLASH
+      SPACE:
+        skip_key_event: true
+        release: { set_mode: default }
+
+      HOMEPAGE: ENTER
+      NUMLOCK: P
+      KP7: F
+      KP4: W
+      KP1: Q
+      KP0: TAB
+    mode: numbers
