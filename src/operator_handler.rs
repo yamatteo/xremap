@@ -7,6 +7,7 @@ use crate::event_handler::PRESS;
 use crate::operator_double_tap::DoubleTapOperator;
 use crate::operator_oneshot::OneshotOperator;
 use crate::operator_sim::SimOperator;
+use crate::operator_tap_hold_next_release::TapHoldNextReleaseOperator;
 use crate::operator_throttle::ThrottleOperator;
 use crate::operators::{ActiveOperator, OperatorAction, OperatorEntry, StaticOperator};
 use crate::timeout_manager::TimeoutManager;
@@ -108,6 +109,9 @@ fn get_static_operators(
             .iter()
             .flat_map(|operator| get_static_operators(key, operator, &timeout_manager))
             .collect(),
+        ExpmapOperator::TapHoldNextRelease(tap_hold) => {
+            TapHoldNextReleaseOperator::get_ops(key, tap_hold, timeout_manager.clone())
+        }
     }
 }
 

@@ -38,6 +38,7 @@ mod operator_double_tap;
 mod operator_handler;
 mod operator_oneshot;
 mod operator_sim;
+mod operator_tap_hold_next_release;
 mod operator_throttle;
 mod operators;
 mod plugin;

@@ -615,7 +615,12 @@ impl EventHandlerForTest {
     pub fn new_with_current_application(config_yaml: &str, current_application: Option<String>) -> Self {
         let timer = TimerFd::new(ClockId::CLOCK_MONOTONIC, TimerFlags::empty()).unwrap();
         let config = parse_config_for_test(config_yaml);
-        let event_handler = EventHandler::new(timer, &config.default_mode, Duration::from_micros(0), None);
+        let operator_handler = if !config.experimental_map.is_empty() {
+            Some(OperatorHandler::new(&config.experimental_map, Rc::new(TimeoutManager::new())))
+        } else {
+            None
+        };
+        let event_handler = EventHandler::new(timer, &config.default_mode, Duration::from_micros(0), operator_handler);
 
         Self {
             event_handler,
