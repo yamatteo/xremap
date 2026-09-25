@@ -4,9 +4,13 @@ This guide explains how to set up `xremap` from scratch on a new Linux machine (
 
 ---
 
-## 1. Download and Install `xremap` Binary
+## 1. Install `xremap` Binary
 
-You do **not** need to compile from source or clone the repository; pre-built binaries are published for each desktop environment on GitHub.
+You can either download a pre-built binary or build from source. Building from source is useful if you want the latest unreleased changes or a variant not covered by the published packages.
+
+### Option A: Download Pre-Built Binary
+
+Pre-built binaries are published for each desktop environment on GitHub.
 
 1. Go to the [xremap GitHub Releases](https://github.com/xremap/xremap/releases) page (or download via `curl`/`wget`).
 2. Download the package matching your desktop environment (e.g., GNOME on x86_64):
@@ -22,10 +26,37 @@ You do **not** need to compile from source or clone the repository; pre-built bi
    sudo install -m 755 xremap /usr/local/bin/xremap
    rm xremap xremap-gnome.zip
    ```
-3. Verify the installation:
+
+### Option B: Build from Source
+
+1. **Install Rust** (via [rustup](https://rustup.rs/)):
    ```bash
-   xremap --version
+   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+   source "$HOME/.cargo/env"
    ```
+
+2. **Install build dependencies** (Ubuntu/Debian):
+   ```bash
+   sudo apt install build-essential libx11-dev
+   ```
+
+3. **Clone the repository and build** with the feature matching your desktop environment (GNOME shown here):
+   ```bash
+   git clone https://github.com/xremap/xremap.git
+   cd xremap
+   cargo build --release --features gnome
+   ```
+
+4. **Install the binary:**
+   ```bash
+   sudo install -m 755 target/release/xremap /usr/local/bin/xremap
+   ```
+
+### Verify the Installation
+
+```bash
+xremap --version
+```
 
 ---
 
@@ -208,7 +239,47 @@ modmap:
 
 ---
 
-## 6. Management and Verification
+## 6. Set Up the Layers Service (tap-hold homerow mods)
+
+`layers.yml` applies a second remap pass (e.g. tap-hold homerow mods) on top of the merged
+output produced by `xremap.service`. Since it needs to grab the virtual `xremap-numpads`
+device, this service must start *after* the first one is already running and producing that
+device.
+
+1. **Create `~/.config/systemd/user/xremap-layers.service`:**
+   ```ini
+   [Unit]
+   Description=xremap key remapper for numpad layers (tap-hold homerow mods)
+   After=xremap.service
+   BindsTo=xremap.service
+
+   [Service]
+   ExecStart=/usr/local/bin/xremap --watch --device "xremap-numpads" %h/.config/xremap/layers.yml
+   Restart=always
+   RestartSec=3
+   StandardOutput=journal
+   StandardError=journal
+
+   [Install]
+   WantedBy=default.target
+   ```
+
+   `After=` orders it behind `xremap.service`, and `BindsTo=` ties its lifecycle to it: if
+   `xremap.service` stops or restarts (e.g. after editing `config.yml`), `xremap-layers.service`
+   is stopped too, and will start back up once `xremap.service` is running again.
+
+2. **Enable and start the service:**
+   ```bash
+   systemctl --user daemon-reload
+   systemctl --user enable --now xremap-layers.service
+   ```
+
+   Enabling `xremap-layers.service` also starts `xremap.service` first, thanks to the
+   `BindsTo=`/`After=` ordering above.
+
+---
+
+## 7. Management and Verification
 
 - **Check Service Status:**
   ```bash

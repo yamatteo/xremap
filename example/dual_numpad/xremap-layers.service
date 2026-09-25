@@ -1,0 +1,14 @@
+[Unit]
+Description=xremap key remapper for numpad layers (tap-hold homerow mods)
+After=xremap.service
+BindsTo=xremap.service
+
+[Service]
+ExecStart=/usr/local/bin/xremap --watch --device "xremap-numpads" %h/.config/xremap/layers.yml
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target
