@@ -1,5 +1,5 @@
 modmap:
-  - name: base_left
+  - name: left
     device:
       only:
         - /dev/input/by-id/numpad-left-kbd
@@ -19,9 +19,10 @@ modmap:
       KPSLASH: T
       TAB: D
 
+      # Hold to put the right pad in numbers mode.
       KPDOT:
         skip_key_event: true
-        press: { set_mode: numbers }
+        press: { set_mode: numbers_right }
         release: { set_mode: default }
       KP3: Z
       KP6: X
@@ -29,50 +30,68 @@ modmap:
       KPASTERISK: V
       MAIL: B
 
-      KPENTER: ESC
-      KPPLUS: ESC
-      KPMINUS: ESC
-      BACKSPACE: ESC
-      CALC: SPACE
-    mode: default
+      #######: EMPTY
+      KPENTER: LEFTCTRL
+      KPPLUS: LEFTMETA
+      KPMINUS: F14
+      BACKSPACE: SPACE
+      # Hold to put the right pad in move mode.
+      CALC:
+        skip_key_event: true
+        press: { set_mode: move_right }
+        release: { set_mode: default }
 
-  - name: numbers_left
+  # Move mode is handled here, on the raw keycodes, so the arrows never reach
+  # the tap-hold-next-release homerow in layers.yml. Keys not listed fall
+  # through to the "right" entry below (first match wins).
+  - name: right_move
     device:
       only:
-        - /dev/input/by-id/numpad-left-kbd
-        - /dev/input/by-id/numpad-left-consumer
+        - /dev/input/by-id/numpad-right-kbd
+        - /dev/input/by-id/numpad-right-consumer
+    mode: [move_right]
     remap:
-      KP0: TAB
-      KP1: Q
-      KP4: W
-      KP7: F
-      NUMLOCK: P
-      HOMEPAGE: G
+      BACKSPACE: HOME       # L
+      KPMINUS: KEY_UP       # U
+      KPPLUS: PAGEUP        # Y
 
-      SPACE: BACKSPACE
-      KP2: A
-      KP5: R
-      KP8: S
-      KPSLASH: T
-      TAB: D
+      KPASTERISK: KEY_LEFT  # N
+      KP6: KEY_RIGHT        # I
 
-      KPDOT:
-        skip_key_event: true
-        release: { set_mode: default }
-      KP3: Z
-      KP6: X
-      KP9: C
-      KPASTERISK: V
-      MAIL: B
+      KPSLASH: END          # M
+      KP8: KEY_DOWN         # COMMA
+      KP5: PAGEDOWN         # DOT
 
-      KPENTER: ESC
-      KPPLUS: ESC
-      KPMINUS: ESC
-      BACKSPACE: ESC
-      CALC: SPACE
-    mode: numbers
+  - name: right_numbers
+    device:
+      only:
+        - /dev/input/by-id/numpad-right-kbd
+        - /dev/input/by-id/numpad-right-consumer
+    mode: [numbers_right]
+    remap:
+      CALC: GRAVE           # J
+      BACKSPACE: KEY_7      # L
+      KPMINUS: KEY_8        # U
+      KPPLUS: KEY_9         # Y
+      KPENTER: BACKSLASH    # SEMICOLON
 
-  - name: base_right
+      MAIL: APOSTROPHE      # H
+      KPASTERISK: KEY_4     # N
+      KP9: KEY_5            # E
+      KP6: KEY_6            # I
+      KP3: MINUS            # O
+
+      TAB: KEY_0            # K
+      KPSLASH: KEY_1        # M
+      KP8: KEY_2            # COMMA
+      KP5: KEY_3            # DOT
+      KP2: EQUAL            # SLASH
+
+  # A left-pad move mode would be a "left_move" entry with mode: [move_left]
+  # before "left". Until one exists, move_left behaves exactly like default.
+  # Left numbers mode is in the keymap below, since it needs Shift combos.
+
+  - name: right
     device:
       only:
         - /dev/input/by-id/numpad-right-kbd
@@ -90,59 +109,39 @@ modmap:
       KP9: E
       KP6: I
       KP3: O
-      KPDOT: DELETE
+      KPDOT: ENTER
 
       TAB: K
       KPSLASH: M
       KP8: COMMA
       KP5: DOT
       KP2: SLASH
+      # Hold to put the left pad in numbers mode.
       SPACE:
         skip_key_event: true
-        press: { set_mode: numbers }
+        press: { set_mode: numbers_left }
         release: { set_mode: default }
 
-      HOMEPAGE: ENTER
-      NUMLOCK: P
-      KP7: F
-      KP4: W
-      KP1: Q
-      KP0: TAB
-    mode: default
+      # Hold to put the left pad in move mode (no-op for now).
+      HOMEPAGE:
+        skip_key_event: true
+        press: { set_mode: move_left }
+        release: { set_mode: default }
+      NUMLOCK: SPACE
+      KP7: F14
+      KP4: RIGHTMETA
+      KP1: F22
+      KP0: ESC
 
-  - name: numbers_right
-    device:
-      only:
-        - /dev/input/by-id/numpad-right-kbd
-        - /dev/input/by-id/numpad-right-consumer
+# Keymap runs after modmap, so these match the letters the "left" entry
+# produced. Only the left pad produces P G T D V B, so no device filter.
+keymap:
+  - name: left_numbers
+    mode: numbers_left
     remap:
-      CALC: J
-      BACKSPACE: KEY_7
-      KPMINUS: KEY_8
-      KPPLUS: KEY_9
-      KPENTER: SEMICOLON
-      # KPENTER continuation
-
-      MAIL: H
-      KPASTERISK: KEY_4
-      KP9: KEY_5
-      KP6: KEY_6
-      KP3: O
-      KPDOT: DELETE
-
-      TAB: K
-      KPSLASH: KEY_1
-      KP8: KEY_2
-      KP5: KEY_3
-      KP2: SLASH
-      SPACE:
-        skip_key_event: true
-        release: { set_mode: default }
-
-      HOMEPAGE: ENTER
-      NUMLOCK: P
-      KP7: F
-      KP4: W
-      KP1: Q
-      KP0: TAB
-    mode: numbers
+      P: Shift-KEY_9          # NUMLOCK -> (
+      G: Shift-KEY_0          # HOMEPAGE -> )
+      T: LEFTBRACE            # KPSLASH -> [
+      D: RIGHTBRACE           # TAB -> ]
+      V: Shift-LEFTBRACE      # KPASTERISK -> {
+      B: Shift-RIGHTBRACE     # MAIL -> }
