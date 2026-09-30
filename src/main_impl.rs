@@ -234,11 +234,13 @@ pub fn xremap_cli(mut plugin: impl Plugin) -> anyhow::Result<()> {
     'main_loop: loop {
         let timeout_manager = Rc::new(TimeoutManager::new());
 
+        // Watch before scanning, so a device that appears during the scan isn't missed.
+        let device_watcher = DeviceWatcher::new(watch_devices).context("Setting up device watcher")?;
+
         let mut input_devices =
             select_input_devices(&device_filter, &ignore_filter, mouse, watch_devices, &own_device)?;
 
         // Watchers
-        let device_watcher = DeviceWatcher::new(watch_devices).context("Setting up device watcher")?;
         let mut config_watcher =
             ConfigWatcher::new(watch_config, config_paths.clone(), config.config_watch_debounce_ms)?;
 
