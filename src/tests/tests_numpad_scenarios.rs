@@ -232,6 +232,8 @@ fn scenarios() -> Vec<(&'static str, Vec<Step>)> {
             Rep(RR, K::KEY_KPASTERISK),
             R(RR, K::KEY_KPASTERISK),
         ]);
+        v.extend(tap(RC, K::KEY_CALC));
+        v.extend(tap(RC, K::KEY_MAIL));
         v.push(R(L, K::KEY_KP3));
         v.extend(tap(RR, K::KEY_KPASTERISK));
         v

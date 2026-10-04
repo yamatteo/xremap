@@ -321,6 +321,10 @@
   KEY_KPASTERISK, value: Repeat -> KEY_LEFT:Repeat 
   KEY_KPASTERISK, value: Repeat -> KEY_LEFT:Repeat 
   KEY_KPASTERISK, value: Release -> KEY_LEFT:Release 
+  KEY_CALC, value: Press       -> KEY_INSERT:Press 
+  KEY_CALC, value: Release     -> KEY_INSERT:Release 
+  KEY_MAIL, value: Press       -> KEY_DELETE:Press 
+  KEY_MAIL, value: Release     -> KEY_DELETE:Release 
   KEY_KP3, value: Release      -> 
   KEY_KPASTERISK, value: Press -> 
   KEY_KPASTERISK, value: Release -> KEY_N:Press KEY_N:Release 
