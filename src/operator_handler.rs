@@ -1,6 +1,6 @@
 use crate::client::WMClient;
-use crate::config::expmap::Expmap;
-use crate::config::expmap_operator::ExpmapOperator;
+use crate::config::stage::StageEntry;
+use crate::config::stage_operator::StageOperator;
 use crate::emit_handler::{Emit, EmitHandler};
 use crate::event::Event;
 use crate::event_handler::PRESS;
@@ -45,19 +45,19 @@ pub struct OperatorHandler {
 /// handles the last part 'AB'. If operators were only static, then it would be more complicated
 /// because they would have to keep track of the whether 'b' should be squashed or let through.
 impl OperatorHandler {
-    pub fn new(experimental_map: &[Expmap], timeout_manager: Rc<TimeoutManager>) -> OperatorHandler {
+    pub fn new(stage: &[StageEntry], timeout_manager: Rc<TimeoutManager>) -> OperatorHandler {
         let mut lookup_map: HashMap<Key, Vec<OperatorEntry>> = HashMap::new();
 
-        for expmap in experimental_map {
-            for chord in &expmap.chords {
+        for entry in stage {
+            for chord in &entry.chords {
                 let operators = SimOperator::get_ops(chord, timeout_manager.clone());
 
-                append(operators, &mut lookup_map, expmap);
+                append(operators, &mut lookup_map, entry);
             }
 
-            for (key, op) in &expmap.remap {
+            for (key, op) in &entry.remap {
                 let operators = get_static_operators(*key, op, &timeout_manager);
-                append(operators, &mut lookup_map, expmap);
+                append(operators, &mut lookup_map, entry);
             }
         }
 
@@ -111,7 +111,7 @@ impl OperatorHandler {
 }
 
 /// Makes one handler per non-empty stage.
-pub fn build_stages(stages: &[Vec<Expmap>], timeout_manager: &Rc<TimeoutManager>) -> Vec<OperatorHandler> {
+pub fn build_stages(stages: &[Vec<StageEntry>], timeout_manager: &Rc<TimeoutManager>) -> Vec<OperatorHandler> {
     stages
         .iter()
         .filter(|stage| !stage.is_empty())
@@ -122,38 +122,38 @@ pub fn build_stages(stages: &[Vec<Expmap>], timeout_manager: &Rc<TimeoutManager>
 /// Makes the static operators, that is needed for the given configuration file definition.
 fn get_static_operators(
     key: Key,
-    op: &ExpmapOperator,
+    op: &StageOperator,
     timeout_manager: &Rc<TimeoutManager>,
 ) -> Vec<(Key, Box<dyn StaticOperator>)> {
     match op {
-        ExpmapOperator::DoubleTap(dbltap) => DoubleTapOperator::get_ops(key, dbltap, timeout_manager.clone()),
-        ExpmapOperator::Throttle(timeout) => ThrottleOperator::get_ops(key, *timeout),
-        ExpmapOperator::OneShot(action) => OneshotOperator::get_ops(key, *action),
-        ExpmapOperator::Select(operators) => operators
+        StageOperator::DoubleTap(dbltap) => DoubleTapOperator::get_ops(key, dbltap, timeout_manager.clone()),
+        StageOperator::Throttle(timeout) => ThrottleOperator::get_ops(key, *timeout),
+        StageOperator::OneShot(action) => OneshotOperator::get_ops(key, *action),
+        StageOperator::Select(operators) => operators
             .iter()
             .flat_map(|operator| get_static_operators(key, operator, &timeout_manager))
             .collect(),
-        ExpmapOperator::TapHoldNextRelease(tap_hold) => {
+        StageOperator::TapHoldNextRelease(tap_hold) => {
             TapHoldNextReleaseOperator::get_ops(key, tap_hold, timeout_manager.clone())
         }
-        ExpmapOperator::Keys(keys) => KeysOperator::get_ops(key, keys),
-        ExpmapOperator::MultiPurposeKey(config) => MultiPurposeOperator::get_ops(key, config),
-        ExpmapOperator::PressReleaseKey(config) => PressReleaseOperator::get_ops(key, config),
+        StageOperator::Keys(keys) => KeysOperator::get_ops(key, keys),
+        StageOperator::MultiPurposeKey(config) => MultiPurposeOperator::get_ops(key, config),
+        StageOperator::PressReleaseKey(config) => PressReleaseOperator::get_ops(key, config),
     }
 }
 
 fn append(
     operators: Vec<(Key, Box<dyn StaticOperator>)>,
     lookup_map: &mut HashMap<Key, Vec<OperatorEntry>>,
-    expmap: &Expmap,
+    entry: &StageEntry,
 ) {
     for (key, operator) in operators {
         let entry = OperatorEntry {
             operator,
-            application: expmap.application.clone(),
-            title: expmap.window.clone(),
-            device: expmap.device.clone(),
-            mode: expmap.mode.clone(),
+            application: entry.application.clone(),
+            title: entry.window.clone(),
+            device: entry.device.clone(),
+            mode: entry.mode.clone(),
         };
         match lookup_map.get_mut(&key) {
             Some(current) => {

@@ -1,5 +1,5 @@
-use crate::config::expmap_operator::ExpmapAction;
 use crate::config::expmap_simkey::Simkey;
+use crate::config::stage_operator::ExpmapAction;
 use crate::device::InputDeviceInfo;
 use crate::event::{Event, KeyEvent, KeyValue};
 use crate::operators::{map_actions, ActiveOperator, OperatorAction, StaticOperator};

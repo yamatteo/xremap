@@ -1,9 +1,9 @@
 use super::device::DeviceMatcher;
 use crate::config::application::ApplicationMatch;
 use crate::config::deserializers::{deserialize_key, deserialize_string_or_vec};
-use crate::config::expmap::Expmap;
-use crate::config::expmap_operator::ExpmapOperator;
 use crate::config::modmap_operator::ModmapOperator;
+use crate::config::stage::StageEntry;
+use crate::config::stage_operator::StageOperator;
 use evdev::KeyCode as Key;
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
@@ -25,8 +25,8 @@ pub struct Modmap {
 
 impl Modmap {
     // A modmap entry is a stage entry without chords.
-    pub fn into_stage_entry(self) -> Expmap {
-        Expmap {
+    pub fn into_stage_entry(self) -> StageEntry {
+        StageEntry {
             name: self.name,
             chords: vec![],
             remap: self
@@ -34,9 +34,9 @@ impl Modmap {
                 .into_iter()
                 .map(|(key, operator)| {
                     let operator = match operator {
-                        ModmapOperator::Keys(keys) => ExpmapOperator::Keys(keys),
-                        ModmapOperator::MultiPurposeKey(config) => ExpmapOperator::MultiPurposeKey(config),
-                        ModmapOperator::PressReleaseKey(config) => ExpmapOperator::PressReleaseKey(config),
+                        ModmapOperator::Keys(keys) => StageOperator::Keys(keys),
+                        ModmapOperator::MultiPurposeKey(config) => StageOperator::MultiPurposeKey(config),
+                        ModmapOperator::PressReleaseKey(config) => StageOperator::PressReleaseKey(config),
                     };
                     (key, operator)
                 })

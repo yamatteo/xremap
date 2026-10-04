@@ -1,6 +1,6 @@
 use crate::config::deserialize_keys;
 use crate::config::deserializers::deserialize_duration;
-use crate::config::expmap_operator::{deserialize_expmap_actions, ExpmapAction};
+use crate::config::stage_operator::{deserialize_expmap_actions, ExpmapAction};
 use evdev::KeyCode as Key;
 use serde::Deserialize;
 use std::time::Duration;

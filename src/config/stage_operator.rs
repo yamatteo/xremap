@@ -10,14 +10,14 @@ use std::time::Duration;
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(untagged)]
-pub enum ExpmapOperator {
+pub enum StageOperator {
     DoubleTap(DoubleTap),
     #[serde(deserialize_with = "deserialize_throttle")]
     Throttle(Duration),
     #[serde(deserialize_with = "deserialize_oneshot")]
     OneShot(Key),
     #[serde(deserialize_with = "deserialize_select")]
-    Select(Vec<ExpmapOperator>),
+    Select(Vec<StageOperator>),
     #[serde(deserialize_with = "deserialize_tap_hold_next_release")]
     TapHoldNextRelease(TapHoldNextRelease),
     // The modmap operators. PressReleaseKey must be last, because all its fields are optional.
@@ -34,15 +34,18 @@ pub fn deserialize_oneshot<'de, D: Deserializer<'de>>(deserializer: D) -> Result
     Ok(deserialize_single_field::<D, KeyWrapper>(deserializer, "oneshot")?.0)
 }
 
-pub fn deserialize_select<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<ExpmapOperator>, D::Error> {
-    Ok(deserialize_single_field::<D, Vec<ExpmapOperator>>(deserializer, "select")?)
+pub fn deserialize_select<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<StageOperator>, D::Error> {
+    Ok(deserialize_single_field::<D, Vec<StageOperator>>(deserializer, "select")?)
 }
 
 pub fn deserialize_tap_hold_next_release<'de, D: Deserializer<'de>>(
     deserializer: D,
 ) -> Result<TapHoldNextRelease, D::Error> {
     let mut map = HashMap::<String, TapHoldNextRelease>::deserialize(deserializer)?;
-    if let Some(value) = map.remove("tap_hold_next_release").or_else(|| map.remove("tap-hold-next-release")) {
+    if let Some(value) = map
+        .remove("tap_hold_next_release")
+        .or_else(|| map.remove("tap-hold-next-release"))
+    {
         if map.is_empty() {
             return Ok(value);
         }

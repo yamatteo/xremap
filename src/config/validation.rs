@@ -1,8 +1,8 @@
-use crate::config::expmap_operator::ExpmapOperator;
 use crate::config::key_combo::KeyCombo;
 use crate::config::keymap_action::KeymapAction;
 use crate::config::keymap_action_without_args::ActionWithoutArgs;
 use crate::config::modmap_operator::ModmapOperator;
+use crate::config::stage_operator::StageOperator;
 use crate::config::Config;
 use crate::event_handler::{DISGUISED_EVENT_OFFSETTER, KEY_MATCH_ANY};
 use anyhow::bail;
@@ -31,12 +31,12 @@ pub fn validate_config_file(config: &Config) -> anyhow::Result<()> {
 }
 
 // The modmap operators in a stage are checked like in modmap.
-fn traverse_stage_operator(key: Key, operator: &ExpmapOperator) -> anyhow::Result<()> {
+fn traverse_stage_operator(key: Key, operator: &StageOperator) -> anyhow::Result<()> {
     let operator = match operator {
-        ExpmapOperator::Keys(keys) => ModmapOperator::Keys(keys.clone()),
-        ExpmapOperator::MultiPurposeKey(config) => ModmapOperator::MultiPurposeKey(config.clone()),
-        ExpmapOperator::PressReleaseKey(config) => ModmapOperator::PressReleaseKey(config.clone()),
-        ExpmapOperator::Select(operators) => {
+        StageOperator::Keys(keys) => ModmapOperator::Keys(keys.clone()),
+        StageOperator::MultiPurposeKey(config) => ModmapOperator::MultiPurposeKey(config.clone()),
+        StageOperator::PressReleaseKey(config) => ModmapOperator::PressReleaseKey(config.clone()),
+        StageOperator::Select(operators) => {
             for operator in operators {
                 traverse_stage_operator(key, operator)?;
             }

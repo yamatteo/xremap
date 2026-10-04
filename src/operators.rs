@@ -1,6 +1,6 @@
 use crate::config::application::ApplicationMatch;
 use crate::config::device::DeviceMatcher;
-use crate::config::expmap_operator::ExpmapAction;
+use crate::config::stage_operator::ExpmapAction;
 use crate::device::InputDeviceInfo;
 use crate::emit_handler::Emit;
 use crate::event::{Event, KeyEvent, KeyValue};

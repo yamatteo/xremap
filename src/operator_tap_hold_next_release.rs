@@ -1,4 +1,4 @@
-use crate::config::expmap_operator::{TapHoldAction, TapHoldNextRelease};
+use crate::config::stage_operator::{TapHoldAction, TapHoldNextRelease};
 use crate::device::InputDeviceInfo;
 use crate::emit_handler::Emit;
 use crate::event::{Event, KeyEvent};

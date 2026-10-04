@@ -1,4 +1,4 @@
-use crate::config::expmap_operator::{DoubleTap, ExpmapAction};
+use crate::config::stage_operator::{DoubleTap, ExpmapAction};
 use crate::device::InputDeviceInfo;
 use crate::event::{Event, KeyEvent, KeyValue};
 use crate::operators::{map_actions, ActiveOperator, OperatorAction, StaticOperator};

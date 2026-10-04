@@ -1,8 +1,6 @@
 pub mod application;
 pub mod deserializers;
 pub mod device;
-pub mod expmap;
-pub mod expmap_operator;
 pub mod expmap_simkey;
 pub mod key;
 pub mod key_combo;
@@ -12,13 +10,15 @@ pub mod keymap_action_without_args;
 pub mod modmap;
 pub mod modmap_operator;
 pub mod nested_remap;
+pub mod stage;
+pub mod stage_operator;
 #[cfg(test)]
 mod tests;
 pub mod validation;
 
-use crate::config::expmap::Expmap;
 use crate::config::key::parse_key;
 use crate::config::keymap::{build_keymap_table, Keymap, KeymapEntry};
+use crate::config::stage::StageEntry;
 use crate::config::validation::validate_config_file;
 use crate::event_handler::DISGUISED_EVENT_OFFSETTER;
 use crate::event_handler::MODIFIER_KEYS;
@@ -35,10 +35,10 @@ pub struct Config {
     // Config interface
     // Event stages, applied in order. Each stage is a list of entries.
     #[serde(default = "Vec::new")]
-    pub stages: Vec<Vec<Expmap>>,
+    pub stages: Vec<Vec<StageEntry>>,
     // Legacy sections, moved into `stages` by `resolve_stages`.
     #[serde(default = "Vec::new")]
-    pub experimental_map: Vec<Expmap>,
+    pub experimental_map: Vec<StageEntry>,
     #[serde(default = "Vec::new")]
     pub modmap: Vec<Modmap>,
     #[serde(default = "Vec::new")]
@@ -135,7 +135,9 @@ pub fn resolve_stages(config: &mut Config) -> anyhow::Result<()> {
     }
     if !config.modmap.is_empty() {
         let modmap = std::mem::take(&mut config.modmap);
-        config.stages.push(modmap.into_iter().map(Modmap::into_stage_entry).collect());
+        config
+            .stages
+            .push(modmap.into_iter().map(Modmap::into_stage_entry).collect());
     }
     Ok(())
 }
