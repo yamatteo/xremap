@@ -552,10 +552,10 @@
   KEY_KP1, value: Release      -> KEY_RIGHTCTRL:Release 
   KEY_KP0, value: Press        -> KEY_ESC:Press 
   KEY_KP0, value: Release      -> KEY_ESC:Release 
-  KEY_CALC, value: Press       -> KEY_F11:Press 
-  KEY_CALC, value: Release     -> KEY_F11:Release 
-  KEY_MAIL, value: Press       -> KEY_F12:Press 
-  KEY_MAIL, value: Release     -> KEY_F12:Release 
+  KEY_CALC, value: Press       -> KEY_F12:Press 
+  KEY_CALC, value: Release     -> KEY_F12:Release 
+  KEY_MAIL, value: Press       -> KEY_F11:Press 
+  KEY_MAIL, value: Release     -> KEY_F11:Release 
   KEY_KP1, value: Release      -> 
 == func_left
   KEY_KPENTER, value: Press    -> 

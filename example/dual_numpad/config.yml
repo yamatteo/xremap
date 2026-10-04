@@ -150,11 +150,11 @@ pipeline:
       func:
         mode: [func]
         remap:
-          J: F11
+          J: F12
           L: F7
           U: F8
           Y: F9
-          H: F12
+          H: F11
           N: F4
           E: F5
           I: F6
@@ -184,11 +184,13 @@ pipeline:
       right_move:
         mode: [move_right]
         remap:
+          J: INSERT
           L: HOME
           U: KEY_UP
           Y: PAGEUP
           SEMICOLON: CAPSLOCK
 
+          H: DELETE
           N: KEY_LEFT
           I: KEY_RIGHT
 
