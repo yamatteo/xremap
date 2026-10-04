@@ -140,15 +140,14 @@ The configuration and the systemd unit live in this repository, under
 | `scenarios.txt` | Expected output of `config.yml` for a set of key sequences, checked by `cargo test`. |
 
 `config.yml` is a [pipeline](doc/reference_stages.md) of stages, each remapping the output of
-the one before, then a keymap:
+the one before:
 
 1. Physical to logical keys: each pad's keycodes to the logical keyboard in
    [`stage_one_visualization.md`](example/dual_numpad/stage_one_visualization.md). This is the
    only device-specific stage; another keyboard needs only a different stage 1.
 2. Layer-taps: A and Z held for numbers and move mode on the right side, O and SLASH for the left side.
-3. Layers: the move and numbers modes.
+3. Layers: the move and numbers modes, including the brackets of the left numbers mode.
 4. Home-row mods: R S T X and N E I DOT are modifiers when held.
-5. `keymap`: the brackets of the left numbers mode, which need Shift combos.
 
 The service runs a deployed copy of the config, so you can work in the checkout (switch
 branches, edit, build) without changing the mapping you're typing with:

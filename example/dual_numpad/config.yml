@@ -1,4 +1,4 @@
-# Four stages, each remapping the output of the one before, then keymap.
+# Four stages, each remapping the output of the one before.
 #
 # 1. Physical keys to logical keys. The only device-specific part: another
 #    keyboard needs only a different stage 1 (see stage_one_visualization.md).
@@ -120,8 +120,7 @@ pipeline:
 
   # --- 3. Layers
   - stage:
-      # F keys on the left side. The brackets are in the keymap below, since
-      # they need Shift combos.
+      # F keys and brackets on the left side.
       left_numbers:
         mode: [numbers_left]
         remap:
@@ -129,14 +128,20 @@ pipeline:
           Q: F2
           W: F3
           F: F4
+          P: [LEFTSHIFT, KEY_9]           # (
+          G: [LEFTSHIFT, KEY_0]           # )
           BACKSPACE: F5
           A: F6
           R: F7
           S: F8
+          T: LEFTBRACE                    # [
+          D: RIGHTBRACE                   # ]
           LEFTSHIFT: F9
           Z: F10
           X: F11
           C: F12
+          V: [LEFTSHIFT, LEFTBRACE]       # {
+          B: [LEFTSHIFT, RIGHTBRACE]      # }
 
       left_move:
         mode: [move_left]
@@ -218,25 +223,9 @@ pipeline:
               tap: DOT
               hold: RIGHTMETA
               timeout: 200
-
-      # In numbers_left T is [, from keymap below.
-      homerow_t:
-        mode: [default, move_left, move_right, numbers_right]
-        remap:
           T:
             tap_hold_next_release:
               tap: T
               hold: LEFTCTRL
               timeout: 200
 
-# Keymap runs after the stages.
-keymap:
-  - name: left_numbers
-    mode: numbers_left
-    remap:
-      P: Shift-KEY_9          # (
-      G: Shift-KEY_0          # )
-      T: LEFTBRACE            # [
-      D: RIGHTBRACE           # ]
-      V: Shift-LEFTBRACE      # {
-      B: Shift-RIGHTBRACE     # }
