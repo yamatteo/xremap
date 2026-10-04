@@ -40,9 +40,9 @@ Pre-built binaries are published for each desktop environment on GitHub.
    sudo apt install build-essential libx11-dev
    ```
 
-3. **Clone the repository and build** with the feature matching your desktop environment (GNOME shown here). The branch below carries the dual numpad example and the operator features it uses (layer-tap, and [`pipeline`](doc/reference_stages.md)):
+3. **Clone the repository and build** with the feature matching your desktop environment (GNOME shown here). `master` carries the dual numpad example and the features it uses (layer-tap, and [`pipeline`](doc/reference_stages.md)):
    ```bash
-   git clone -b feat/tap-hold-next-release https://github.com/yamatteo/xremap.git ~/xremap
+   git clone https://github.com/yamatteo/xremap.git ~/xremap
    cd ~/xremap
    cargo build --release --features gnome
    ```
@@ -231,7 +231,11 @@ systemctl --user restart xremap.service
 - **After Editing a Config:** nothing to do, `--watch=config,device` reloads it on save.
   To try changes from the checkout, test them first (below), then copy `config.yml` over
   `~/.config/xremap/config.yml`. Run `cargo test` too: if the output changed on purpose,
-  update `scenarios.txt` from `target/numpad_scenarios.txt`.
+  update `scenarios.txt` from `target/numpad_scenarios.txt`. Check the config with the
+  installed binary before copying it, since an invalid config isn't loaded:
+  ```bash
+  xremap --validate-config ~/xremap/example/dual_numpad/config.yml
+  ```
 
 - **Restart After Editing a Unit File or Reinstalling the Binary:**
   ```bash
