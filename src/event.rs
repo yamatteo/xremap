@@ -1,3 +1,4 @@
+use crate::config::keymap_action::KeymapAction;
 use crate::device::InputDeviceInfo;
 use crate::event_handler::DISGUISED_EVENT_OFFSETTER;
 use evdev::{EventType, InputEvent, KeyCode as Key};
@@ -19,6 +20,8 @@ pub enum Event {
     // Mode change emitted by an operator. None means back to default_mode.
     // It travels in the event stream, so events after it see the new mode.
     SetMode(Option<String>),
+    // Keymap actions emitted by a press/release key, run by keymap. The key is the trigger.
+    KeymapActions(Key, Vec<KeymapAction>),
     // By pass active operators adn static operators on the same level.
     //  This has the meaning, that the emitted operator has handled the event, created
     //  this synthetic event, that must not have effect on the same level.

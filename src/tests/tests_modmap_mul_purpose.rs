@@ -79,8 +79,8 @@ fn test_two_multipurpose_keys_are_interrupted() {
 }
 
 #[test]
-fn test_multipurpose_key_interruptable_evaluated_after_modmap_lookup() {
-    // Not interrupted. It's unexpected because it happens after modmap dispatch.
+fn test_multipurpose_key_interruptable_evaluated_before_modmap_lookup() {
+    // Interrupted, because the active multi-purpose key sees the pressed key before it's remapped.
     assert_actions(
         indoc! {"
         modmap:
@@ -92,7 +92,10 @@ fn test_multipurpose_key_interruptable_evaluated_after_modmap_lookup() {
                     interruptable: { only: A}
         "},
         vec![Event::key_press(Key::KEY_CAPSLOCK), Event::key_press(Key::KEY_A)],
-        vec![Action::KeyEvent(KeyEvent::new(Key::KEY_B, KeyValue::Press))],
+        vec![
+            Action::KeyEvent(KeyEvent::new(Key::KEY_LEFTSHIFT, KeyValue::Press)),
+            Action::KeyEvent(KeyEvent::new(Key::KEY_B, KeyValue::Press)),
+        ],
     );
 }
 
@@ -666,10 +669,7 @@ fn test_multipurpose_key_never_pressed_but_released() {
 
 #[test]
 fn test_multipurpose_hold_by_interrupt_then_mode_change() {
-    // This fails (fatally) because `maintain_pressed_keys` is executed
-    // after `flush_timeout_keys`, so the 'subtitute-key' isn't recorded
-    // on emit/interrupt. It's also not recorded on press, because there
-    // is emit suppresed.
+    // The release goes to the multi-purpose key, that was active since the press.
     assert_actions(
         indoc! {"
         modmap:
@@ -694,7 +694,7 @@ fn test_multipurpose_hold_by_interrupt_then_mode_change() {
         vec![
             Action::KeyEvent(KeyEvent::new(Key::KEY_C, KeyValue::Press)),
             Action::KeyEvent(KeyEvent::new(Key::KEY_K, KeyValue::Press)),
-            Action::KeyEvent(KeyEvent::new(Key::KEY_E, KeyValue::Release)),
+            Action::KeyEvent(KeyEvent::new(Key::KEY_C, KeyValue::Release)),
         ],
     );
 }
@@ -724,7 +724,7 @@ fn test_multipurpose_hold_by_timeout_then_mode_change() {
         ],
         vec![
             Action::KeyEvent(KeyEvent::new(Key::KEY_C, KeyValue::Press)),
-            Action::KeyEvent(KeyEvent::new(Key::KEY_E, KeyValue::Release)),
+            Action::KeyEvent(KeyEvent::new(Key::KEY_C, KeyValue::Release)),
         ],
     );
 }

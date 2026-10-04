@@ -5,6 +5,7 @@ use crate::emit_handler::{Emit, EmitHandler};
 use crate::event::Event;
 use crate::event_handler::PRESS;
 use crate::operator_double_tap::DoubleTapOperator;
+use crate::operator_modmap::{KeysOperator, MultiPurposeOperator, PressReleaseOperator};
 use crate::operator_oneshot::OneshotOperator;
 use crate::operator_sim::SimOperator;
 use crate::operator_tap_hold_next_release::TapHoldNextReleaseOperator;
@@ -135,6 +136,9 @@ fn get_static_operators(
         ExpmapOperator::TapHoldNextRelease(tap_hold) => {
             TapHoldNextReleaseOperator::get_ops(key, tap_hold, timeout_manager.clone())
         }
+        ExpmapOperator::Keys(keys) => KeysOperator::get_ops(key, keys),
+        ExpmapOperator::MultiPurposeKey(config) => MultiPurposeOperator::get_ops(key, config),
+        ExpmapOperator::PressReleaseKey(config) => PressReleaseOperator::get_ops(key, config),
     }
 }
 

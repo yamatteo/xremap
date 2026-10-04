@@ -1,7 +1,7 @@
 use crate::config::deserialize_single_field;
 use crate::config::deserializers::{deserialize_duration, deserialize_key, DurationWrapper, VectorOrSingleOrNull};
 use crate::config::modmap::KeyWrapper;
-use crate::config::modmap_operator::Keys;
+use crate::config::modmap_operator::{Keys, MultiPurposeKey, PressReleaseKey};
 use evdev::KeyCode as Key;
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
@@ -20,6 +20,10 @@ pub enum ExpmapOperator {
     Select(Vec<ExpmapOperator>),
     #[serde(deserialize_with = "deserialize_tap_hold_next_release")]
     TapHoldNextRelease(TapHoldNextRelease),
+    // The modmap operators. PressReleaseKey must be last, because all its fields are optional.
+    Keys(Keys),
+    MultiPurposeKey(MultiPurposeKey),
+    PressReleaseKey(PressReleaseKey),
 }
 
 pub fn deserialize_throttle<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Duration, D::Error> {

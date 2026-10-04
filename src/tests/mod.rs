@@ -19,6 +19,7 @@ mod tests_operator_select;
 mod tests_operator_sim;
 mod tests_operator_tap_hold_next_release;
 mod tests_operator_throttle;
+mod tests_stages;
 mod tests_throttle_emit;
 mod tests_virtual_modifier;
 

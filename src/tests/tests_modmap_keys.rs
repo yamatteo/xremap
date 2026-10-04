@@ -230,7 +230,6 @@ fn test_modmap_release_is_safe_even_with_mode_change_2() {
 
 #[test]
 fn test_modmap_release_is_safe_even_with_mode_change_3() {
-    // fails
     assert_actions(
         indoc! {"
         modmap:
@@ -251,8 +250,7 @@ fn test_modmap_release_is_safe_even_with_mode_change_3() {
         ],
         vec![
             Action::KeyEvent(KeyEvent::new(Key::KEY_C, KeyValue::Press)),
-            Action::KeyEvent(KeyEvent::new(Key::KEY_B, KeyValue::Release)),
-            Action::KeyEvent(KeyEvent::new(Key::KEY_D, KeyValue::Release)),
+            Action::KeyEvent(KeyEvent::new(Key::KEY_C, KeyValue::Release)),
         ],
     )
 }
@@ -321,7 +319,7 @@ fn test_modmap_mode_switch_between_press_and_release_when_multiple_keys() {
         modmap:
             - mode: state1
               remap:
-                # This matches on release, and fails.
+                # Not used on release, because the press decides.
                 a: [d, e]
             - remap:
                 a: [b, c]
@@ -338,9 +336,8 @@ fn test_modmap_mode_switch_between_press_and_release_when_multiple_keys() {
         vec![
             Action::KeyEvent(KeyEvent::new(Key::KEY_B, KeyValue::Press)),
             Action::KeyEvent(KeyEvent::new(Key::KEY_C, KeyValue::Press)),
-            // This fails. KEY_B and KEY_C is stuck.
-            Action::KeyEvent(KeyEvent::new(Key::KEY_D, KeyValue::Release)),
-            Action::KeyEvent(KeyEvent::new(Key::KEY_E, KeyValue::Release)),
+            Action::KeyEvent(KeyEvent::new(Key::KEY_B, KeyValue::Release)),
+            Action::KeyEvent(KeyEvent::new(Key::KEY_C, KeyValue::Release)),
         ],
     )
 }

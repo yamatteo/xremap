@@ -4,22 +4,20 @@ use crate::config::key_combo::{KeyCombo, Modifier};
 use crate::config::keymap::{build_override_table, OverrideEntry};
 use crate::config::keymap_action::KeymapAction;
 use crate::config::keymap_action_without_args::ActionWithoutArgs;
-use crate::config::modmap_operator::{Interruptable, Keys, ModmapOperator, MultiPurposeKey, PressReleaseKey};
 use crate::config::nested_remap::Remap;
 use crate::config::Config;
 use crate::device::InputDeviceInfo;
 use crate::event::{Event, KeyEvent, RelativeEvent};
 use crate::operator_handler::OperatorHandler;
 use evdev::KeyCode as Key;
-use log::{debug, warn};
+use log::debug;
 use nix::sys::time::TimeSpec;
 use nix::sys::timerfd::{Expiration, TimerFd, TimerSetTimeFlags};
-use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::os::fd::{AsFd, BorrowedFd};
 use std::rc::Rc;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 // This const is used to map evdev relative event codes to a pseudo keycode
 pub const DISGUISED_EVENT_OFFSETTER: u16 = 59974;
@@ -31,10 +29,6 @@ pub const KEY_MATCH_ANY: Key = Key(DISGUISED_EVENT_OFFSETTER + 26);
 pub struct EventHandler {
     // Currently pressed modifier keys, in the order they were pressed. (including virtual modifiers)
     modifiers: Vec<Key>,
-    // Make sure the original event is released even if remapping changes while holding the key
-    pressed_keys: HashMap<Key, Key>,
-    // State machine for multi-purpose keys
-    multi_purpose_keys: HashMap<Key, MultiPurposeKeyState>,
     // Current nested remaps
     override_remaps: Vec<HashMap<Key, Vec<OverrideEntry>>>,
     // Key triggered on a timeout of nested remaps
@@ -51,7 +45,7 @@ pub struct EventHandler {
     keypress_delay: Duration,
     // Buffered actions to be dispatched. TODO: Just return actions from each function instead of using this.
     actions: Vec<Action>,
-    // Event stages, applied in order before modmap and keymap.
+    // Event stages, applied in order before keymap.
     stages: Vec<OperatorHandler>,
 }
 
@@ -79,8 +73,6 @@ impl EventHandler {
     ) -> EventHandler {
         EventHandler {
             modifiers: vec![],
-            pressed_keys: HashMap::new(),
-            multi_purpose_keys: HashMap::new(),
             override_remaps: vec![],
             override_timeout_key: None,
             override_timer,
@@ -100,8 +92,8 @@ impl EventHandler {
     }
 
     // Pass an event through the stages from `index` onwards, depth-first: each
-    // event an operator emits goes through all later stages, and then modmap and
-    // keymap, before the next one. Mode changes take effect as soon as a stage emits them.
+    // event an operator emits goes through all later stages, and then keymap,
+    // before the next one. Mode changes take effect as soon as a stage emits them.
     fn run_stages(
         &mut self,
         index: usize,
@@ -163,7 +155,7 @@ impl EventHandler {
         Ok(self.actions.drain(..).collect())
     }
 
-    // Apply modmap and keymap to an event that has gone through all stages.
+    // Apply keymap to an event that has gone through all stages.
     fn on_staged_event(
         &mut self,
         event: Event,
@@ -171,43 +163,45 @@ impl EventHandler {
         wmclient: &mut WMClient,
         mouse_movement_collection: &mut Vec<RelativeEvent>,
     ) -> Result<(), Box<dyn Error>> {
-        // Apply modmap
-        let modmap_events = self.apply_modmap(config, event, wmclient)?;
+        match event {
+            Event::KeyEvent(device, key_event) => {
+                self.on_key_event(key_event.key, key_event.value(), &device, config, wmclient)?;
+            }
+            Event::RelativeEvent(device, relative_event) => {
+                let key = relative_event.to_disguised_key();
 
-        // Apply keymap
-        for event in modmap_events.into_iter() {
-            match event {
-                Event::KeyEvent(device, key_event) => {
-                    self.on_key_event(key_event.key, key_event.value(), &device, config, wmclient)?;
-                }
-                Event::RelativeEvent(device, relative_event) => {
-                    let key = relative_event.to_disguised_key();
+                // Send as disguised-event
+                let was_remapped = self.on_key_event(key, PRESS, &device, config, wmclient)?;
 
-                    // Send as disguised-event
-                    let was_remapped = self.on_key_event(key, PRESS, &device, config, wmclient)?;
-
-                    if !was_remapped {
-                        if relative_event.code <= 2 {
-                            // The relative event keycodes 1 and 2 is REL_X and REL_Y. Meaning mouse move.
-                            mouse_movement_collection.push(relative_event);
-                        } else {
-                            self.send_action(Action::RelativeEvent(relative_event));
-                        }
+                if !was_remapped {
+                    if relative_event.code <= 2 {
+                        // The relative event keycodes 1 and 2 is REL_X and REL_Y. Meaning mouse move.
+                        mouse_movement_collection.push(relative_event);
+                    } else {
+                        self.send_action(Action::RelativeEvent(relative_event));
                     }
                 }
-
-                Event::OtherEvents(event) => self.send_action(Action::InputEvent(event)),
-                Event::OverrideTimeout => self.timeout_override()?,
-                Event::Tick => {
-                    // Can be ignored. It's for operators.
-                }
-                Event::SetMode(mode) => {
-                    let mode = mode.unwrap_or_else(|| config.default_mode.clone());
-                    println!("mode: {mode}");
-                    self.mode = mode;
-                }
-                Event::ByPassLocal(_) => unreachable!(),
             }
+
+            Event::OtherEvents(event) => self.send_action(Action::InputEvent(event)),
+            Event::OverrideTimeout => self.timeout_override()?,
+            Event::Tick => {
+                // Can be ignored. It's for operators.
+            }
+            Event::SetMode(mode) => {
+                let mode = mode.unwrap_or_else(|| config.default_mode.clone());
+                println!("mode: {mode}");
+                self.mode = mode;
+            }
+            Event::KeymapActions(key, actions) => {
+                let actions = vec![TaggedActions {
+                    actions,
+                    exact_match: false,
+                    extra_modifiers_pressed: HashSet::new(),
+                }];
+                self.dispatch_actions(&actions, &key, false)?;
+            }
+            Event::ByPassLocal(_) => unreachable!(),
         }
         Ok(())
     }
@@ -288,251 +282,6 @@ impl EventHandler {
 
     fn send_action(&mut self, action: Action) {
         self.actions.push(action);
-    }
-
-    // Repeat/Release what's originally pressed even if remapping changes while holding it
-    fn maintain_pressed_keys(&mut self, key: Key, value: i32, events: &mut [(Key, i32)]) {
-        // Not handling multi-purpose keys for now; too complicated
-        if events.len() != 1 || value != events[0].1 {
-            // When multiple keys are emitted, then it also comes here which makes it fail.
-            return;
-        }
-
-        let event = events[0];
-        if value == PRESS {
-            self.pressed_keys.insert(key, event.0);
-        } else {
-            if let Some(original_key) = self.pressed_keys.get(&key) {
-                events[0].0 = *original_key;
-            }
-            if value == RELEASE {
-                self.pressed_keys.remove(&key);
-            }
-        }
-    }
-
-    fn dispatch_keys(
-        &mut self,
-        key_action: ModmapOperator,
-        key: Key,
-        value: i32,
-    ) -> Result<Vec<(Key, i32)>, Box<dyn Error>> {
-        let keys = match key_action {
-            ModmapOperator::Keys(modmap_keys) => modmap_keys
-                .into_vec()
-                .into_iter()
-                .map(|modmap_key| (modmap_key, value))
-                .collect(),
-            ModmapOperator::MultiPurposeKey(MultiPurposeKey {
-                hold,
-                tap,
-                hold_threshold,
-                tap_timeout,
-                free_hold,
-                interruptable,
-            }) => {
-                match value {
-                    PRESS => {
-                        // Move this to input validation.
-                        let hold_threshold = if hold_threshold <= tap_timeout {
-                            hold_threshold
-                        } else {
-                            warn!("hold_threshold_millis must be smaller than tap_timeout_millis. Setting hold_threshold_millis to tap_timeout_millis: {:?}", tap_timeout);
-                            tap_timeout
-                        };
-
-                        self.multi_purpose_keys.insert(
-                            key,
-                            MultiPurposeKeyState {
-                                hold,
-                                tap,
-                                interruptable,
-                                hold_threshold_at: if hold_threshold == Duration::ZERO {
-                                    Instant::now()
-                                } else {
-                                    Instant::now() + hold_threshold
-                                },
-                                tap_timeout_at: if free_hold {
-                                    // An approximation of never.
-                                    Instant::now() + Duration::from_secs_f32(1e10)
-                                } else {
-                                    Instant::now() + tap_timeout
-                                },
-                                state: if hold_threshold == Duration::ZERO {
-                                    MultiPurposeKeyStateEnum::HoldPreferred
-                                } else {
-                                    MultiPurposeKeyStateEnum::TapPreferred
-                                },
-                            },
-                        );
-                        return Ok(vec![]); // delay the press
-                    }
-                    REPEAT => {
-                        if let Some(state) = self.multi_purpose_keys.get_mut(&key) {
-                            return Ok(state.repeat());
-                        }
-                    }
-                    RELEASE => {
-                        if let Some(state) = self.multi_purpose_keys.remove(&key) {
-                            return Ok(state.release());
-                        }
-                    }
-                    _ => panic!("unexpected key event value: {value}"),
-                }
-                // fallthrough on state discrepancy
-                vec![(key, value)]
-            }
-            ModmapOperator::PressReleaseKey(PressReleaseKey {
-                skip_key_event,
-                press,
-                repeat,
-                release,
-            }) => {
-                // Just hook actions, and then emit the original event. We might want to
-                // support reordering the key event and dispatched actions later.
-                let actions = match value {
-                    PRESS => press,
-                    RELEASE => release,
-                    _ => repeat,
-                };
-                self.dispatch_actions(
-                    &vec![TaggedActions {
-                        actions,
-                        exact_match: false,
-                        extra_modifiers_pressed: HashSet::new(),
-                    }],
-                    &key,
-                    false,
-                )?;
-
-                match skip_key_event {
-                    true => vec![],              // do not dispatch the original key
-                    false => vec![(key, value)], // dispatch the original key
-                }
-            }
-        };
-        Ok(keys)
-    }
-
-    // Typically only receives one key as argument. It can be more, when also matched
-    // in modmap. But that's probably not a meaningful use case, should probably
-    // interrupt before modmap, rather than after.
-    fn flush_timeout_keys(&mut self, key_values: Vec<(Key, i32)>) -> Vec<(Key, i32)> {
-        let mut pressed = vec![];
-        for (key, value) in key_values.iter() {
-            if *value == PRESS {
-                pressed.push(*key);
-            }
-        }
-
-        if !pressed.is_empty() {
-            let mut flushed: Vec<(Key, i32)> = vec![];
-            for (_, state) in self.multi_purpose_keys.iter_mut() {
-                flushed.extend(state.interrupted_by_press(&*pressed));
-            }
-
-            // filter out key presses that are part of the flushed events
-            let flushed_presses: HashSet<Key> = flushed
-                .iter()
-                .filter_map(|(k, v)| (*v == PRESS).then_some(*k))
-                .collect();
-            // There's generally no protection against spurious press, so
-            // it's probably also not needed here.
-            let key_values: Vec<(Key, i32)> = key_values
-                .into_iter()
-                .filter(|(key, value)| !(*value == PRESS && flushed_presses.contains(key)))
-                .collect();
-
-            flushed.extend(key_values);
-            flushed
-        } else {
-            key_values
-        }
-    }
-
-    fn apply_modmap(
-        &mut self,
-        config: &Config,
-        event: Event,
-        wmclient: &mut WMClient,
-    ) -> Result<Vec<Event>, Box<dyn Error>> {
-        match &event {
-            Event::KeyEvent(device, key_event) => {
-                let key = key_event.key;
-                let value = key_event.value();
-
-                let mut key_values = if let Some(key_action) = self.find_modmap(config, &key, &device, wmclient) {
-                    self.dispatch_keys(key_action, key, value)?
-                } else {
-                    vec![(key, value)]
-                };
-                self.maintain_pressed_keys(key, value, &mut key_values);
-                if !self.multi_purpose_keys.is_empty() {
-                    key_values = self.flush_timeout_keys(key_values);
-                }
-
-                let events: Vec<_> = key_values
-                    .into_iter()
-                    .map(|(key, value)| Event::KeyEvent(device.clone(), KeyEvent::new_with(key.code(), value)))
-                    .collect();
-
-                Ok(events)
-            }
-            Event::RelativeEvent(device, relative_event) => {
-                // Can't use `flush_timeout_keys`, because it would also emit the disguised key.
-                let pressed = vec![relative_event.to_disguised_key()];
-
-                let mut events = vec![];
-                for (_, state) in self.multi_purpose_keys.iter_mut() {
-                    events.extend(state.interrupted_by_press(&pressed));
-                }
-
-                let mut events: Vec<_> = events
-                    .into_iter()
-                    .map(|(key, value)| Event::KeyEvent(device.clone(), KeyEvent::new_with(key.code(), value)))
-                    .collect();
-
-                events.push(event);
-
-                Ok(events)
-            }
-            _ => Ok(vec![event]),
-        }
-    }
-
-    fn find_modmap(
-        &mut self,
-        config: &Config,
-        key: &Key,
-        device: &InputDeviceInfo,
-        wmclient: &mut WMClient,
-    ) -> Option<ModmapOperator> {
-        for modmap in &config.modmap {
-            if let Some(key_action) = modmap.remap.get(key) {
-                if let Some(window_matcher) = &modmap.window {
-                    if !wmclient.match_window(window_matcher) {
-                        continue;
-                    }
-                }
-                if let Some(application_matcher) = &modmap.application {
-                    if !wmclient.match_application(application_matcher) {
-                        continue;
-                    }
-                }
-                if let Some(device_matcher) = &modmap.device {
-                    if !device_matcher.matches(device) {
-                        continue;
-                    }
-                }
-                if let Some(modes) = &modmap.mode {
-                    if !modes.contains(&self.mode) {
-                        continue;
-                    }
-                }
-                return Some(key_action.clone());
-            }
-        }
-        None
     }
 
     // The return is a vector of actions, because nested remaps are included
@@ -908,156 +657,3 @@ fn is_pressed(value: i32) -> bool {
 pub const RELEASE: i32 = 0;
 pub const PRESS: i32 = 1;
 pub const REPEAT: i32 = 2;
-
-// ---
-
-#[derive(Debug, PartialEq)]
-enum MultiPurposeKeyStateEnum {
-    // If released then the tab-action is emitted
-    // If interrupted then the tab-action is emitted
-    // If timeout go to HoldPreferred state
-    TapPreferred,
-    // If released then the tab-action is emitted
-    // If interrupted then the hold-action is emitted
-    // If timeout then hold-action is emitted
-    HoldPreferred,
-    // Tab-action has been pressed and released.
-    TapChosen,
-    // Hold-action has been pressed, but has not been released yet.
-    HoldDown,
-}
-
-#[derive(Debug)]
-struct MultiPurposeKeyState {
-    hold: Keys,
-    tap: Keys,
-    interruptable: Interruptable,
-    hold_threshold_at: Instant,
-    tap_timeout_at: Instant,
-    state: MultiPurposeKeyStateEnum,
-}
-
-impl MultiPurposeKeyState {
-    /// It causes a problem, that repeat is used for timeout. Partially because its interval
-    /// gives low precision. And because the repeat events will stop if another key is pressed. Also
-    /// BTN_RIGHT does not emit repeat events, so mouse buttons can't be remapped this way.   
-    fn repeat(&mut self) -> Vec<(Key, i32)> {
-        if matches!(self.state, MultiPurposeKeyStateEnum::TapPreferred) && Instant::now() >= self.hold_threshold_at {
-            // Timeout. Setting state before going into the switch is necessary
-            self.state = MultiPurposeKeyStateEnum::HoldPreferred;
-        }
-
-        match self.state {
-            MultiPurposeKeyStateEnum::TapPreferred => {
-                vec![] // still delay repeat
-            }
-            MultiPurposeKeyStateEnum::HoldPreferred if Instant::now() < self.tap_timeout_at => {
-                vec![] // still delay repeat
-            }
-            MultiPurposeKeyStateEnum::HoldPreferred => {
-                // timeout
-                self.state = MultiPurposeKeyStateEnum::HoldDown;
-                let mut keys = self.hold.clone().into_vec();
-                keys.sort_by(modifiers_first);
-                keys.into_iter().map(|key| (key, PRESS)).collect()
-            }
-            MultiPurposeKeyStateEnum::HoldDown => {
-                let mut keys = self.hold.clone().into_vec();
-                keys.sort_by(modifiers_first);
-                keys.into_iter().map(|key| (key, REPEAT)).collect()
-            }
-            MultiPurposeKeyStateEnum::TapChosen => {
-                vec![] // tap-action already released, so ignores repeat
-            }
-        }
-    }
-
-    /// This function consumes the MultiPurposeKeyStateEnum, so there's no need to set self.state
-    fn release(mut self) -> Vec<(Key, i32)> {
-        if matches!(self.state, MultiPurposeKeyStateEnum::TapPreferred) && Instant::now() >= self.hold_threshold_at {
-            // Timeout. Setting state before going into the switch is necessary
-            self.state = MultiPurposeKeyStateEnum::HoldPreferred;
-        }
-
-        match self.state {
-            MultiPurposeKeyStateEnum::TapPreferred => {
-                // Before hold_threshold_at timeout
-                self.press_and_release(&self.tap)
-            }
-            MultiPurposeKeyStateEnum::HoldPreferred if Instant::now() < self.tap_timeout_at => {
-                self.press_and_release(&self.tap)
-            }
-            MultiPurposeKeyStateEnum::HoldPreferred => self.press_and_release(&self.hold),
-            MultiPurposeKeyStateEnum::HoldDown => {
-                let mut release_keys = self.hold.clone().into_vec();
-                release_keys.sort_by(modifiers_last);
-                release_keys.into_iter().map(|key| (key, RELEASE)).collect()
-            }
-            MultiPurposeKeyStateEnum::TapChosen => {
-                vec![] // nothing to release
-            }
-        }
-    }
-
-    // Other keys were pressed, so the multipurpose key
-    // should emit presses of its held-value if it can be interrupted by those keys.
-    fn interrupted_by_press(&mut self, pressed: &[Key]) -> Vec<(Key, i32)> {
-        if !pressed.iter().any(|key| self.interruptable.is_interrupted_by(*key)) {
-            return vec![];
-        }
-
-        if matches!(self.state, MultiPurposeKeyStateEnum::TapPreferred) && Instant::now() >= self.hold_threshold_at {
-            // Timeout. Setting state before going into the switch is necessary
-            self.state = MultiPurposeKeyStateEnum::HoldPreferred;
-        }
-
-        match self.state {
-            MultiPurposeKeyStateEnum::TapPreferred => {
-                self.state = MultiPurposeKeyStateEnum::TapChosen;
-                self.press_and_release(&self.tap)
-            }
-            MultiPurposeKeyStateEnum::HoldPreferred => {
-                self.state = MultiPurposeKeyStateEnum::HoldDown;
-
-                let mut keys = self.hold.clone().into_vec();
-                keys.sort_by(modifiers_first);
-                keys.into_iter().map(|key| (key, PRESS)).collect()
-            }
-            MultiPurposeKeyStateEnum::HoldDown | MultiPurposeKeyStateEnum::TapChosen => vec![],
-        }
-    }
-
-    fn press_and_release(&self, keys_to_use: &Keys) -> Vec<(Key, i32)> {
-        let mut release_keys = keys_to_use.clone().into_vec();
-        release_keys.sort_by(modifiers_last);
-        let release_events: Vec<(Key, i32)> = release_keys.into_iter().map(|key| (key, RELEASE)).collect();
-
-        let mut press_keys = keys_to_use.clone().into_vec();
-        press_keys.sort_by(modifiers_first);
-        let mut events: Vec<(Key, i32)> = press_keys.into_iter().map(|key| (key, PRESS)).collect();
-        events.extend(release_events);
-        events
-    }
-}
-
-/// Orders modifier keys ahead of non-modifier keys.
-/// Unfortunately the underlying type doesn't allow direct
-/// comparison, but that's ok for our purposes.
-fn modifiers_first(a: &Key, b: &Key) -> Ordering {
-    if MODIFIER_KEYS.contains(a) {
-        if MODIFIER_KEYS.contains(b) {
-            Ordering::Equal
-        } else {
-            Ordering::Less
-        }
-    } else if MODIFIER_KEYS.contains(b) {
-        Ordering::Greater
-    } else {
-        // Neither are modifiers
-        Ordering::Equal
-    }
-}
-
-fn modifiers_last(a: &Key, b: &Key) -> Ordering {
-    modifiers_first(a, b).reverse()
-}

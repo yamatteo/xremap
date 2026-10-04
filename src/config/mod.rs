@@ -36,7 +36,7 @@ pub struct Config {
     // Event stages, applied in order. Each stage is a list of entries.
     #[serde(default = "Vec::new")]
     pub stages: Vec<Vec<Expmap>>,
-    // Legacy section, moved into `stages` by `resolve_stages`.
+    // Legacy sections, moved into `stages` by `resolve_stages`.
     #[serde(default = "Vec::new")]
     pub experimental_map: Vec<Expmap>,
     #[serde(default = "Vec::new")]
@@ -122,14 +122,21 @@ pub fn load_configs(filenames: &[PathBuf]) -> Result<Config, Box<dyn error::Erro
 }
 
 // Moves the legacy sections into `stages`, so the rest of xremap only has to know about stages.
+// They become two stages, `experimental_map` first, as they were applied before.
 pub fn resolve_stages(config: &mut Config) -> anyhow::Result<()> {
-    if config.experimental_map.is_empty() {
+    if config.experimental_map.is_empty() && config.modmap.is_empty() {
         return Ok(());
     }
     if !config.stages.is_empty() {
-        anyhow::bail!("`stages` can't be combined with `experimental_map`");
+        anyhow::bail!("`stages` can't be combined with `experimental_map` or `modmap`");
     }
-    config.stages.push(std::mem::take(&mut config.experimental_map));
+    if !config.experimental_map.is_empty() {
+        config.stages.push(std::mem::take(&mut config.experimental_map));
+    }
+    if !config.modmap.is_empty() {
+        let modmap = std::mem::take(&mut config.modmap);
+        config.stages.push(modmap.into_iter().map(Modmap::into_stage_entry).collect());
+    }
     Ok(())
 }
 
