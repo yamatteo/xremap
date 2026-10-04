@@ -281,8 +281,8 @@
   KEY_KPMINUS, value: Release  -> KEY_UP:Release 
   KEY_KPPLUS, value: Press     -> KEY_PAGEUP:Press 
   KEY_KPPLUS, value: Release   -> KEY_PAGEUP:Release 
-  KEY_KPENTER, value: Press    -> KEY_SEMICOLON:Press 
-  KEY_KPENTER, value: Release  -> KEY_SEMICOLON:Release 
+  KEY_KPENTER, value: Press    -> KEY_CAPSLOCK:Press 
+  KEY_KPENTER, value: Release  -> KEY_CAPSLOCK:Release 
   KEY_KPASTERISK, value: Press -> KEY_LEFT:Press 
   KEY_KPASTERISK, value: Release -> KEY_LEFT:Release 
   KEY_KP9, value: Press        -> 
@@ -363,8 +363,8 @@
   KEY_SPACE, value: Release    -> KEY_RIGHTSHIFT:Release 
 == homepage_move_left
   KEY_HOMEPAGE, value: Press   -> 
-  KEY_KP0, value: Press        -> KEY_TAB:Press 
-  KEY_KP0, value: Release      -> KEY_TAB:Release 
+  KEY_KP0, value: Press        -> KEY_ESC:Press 
+  KEY_KP0, value: Release      -> KEY_ESC:Release 
   KEY_KP1, value: Press        -> KEY_Q:Press 
   KEY_KP1, value: Release      -> KEY_Q:Release 
   KEY_KP4, value: Press        -> KEY_W:Press 

@@ -69,6 +69,14 @@ pipeline:
           KP6: F11
           KP9: F12
 
+      left_move:
+        device:
+          only:
+            - /dev/input/by-id/numpad-left-kbd
+        mode: [move_left]
+        remap:
+          KP0: ESC
+
       left:
         device:
           only:
@@ -118,6 +126,7 @@ pipeline:
           BACKSPACE: HOME       # L
           KPMINUS: KEY_UP       # U
           KPPLUS: PAGEUP        # Y
+          KPENTER: CAPSLOCK     # SEMICOLON
 
           KPASTERISK: KEY_LEFT  # N
           KP6: KEY_RIGHT        # I
@@ -151,8 +160,6 @@ pipeline:
           KP5: KEY_3            # DOT
           KP2: EQUAL            # SLASH
 
-      # A left-pad move mode would be a "left_move" entry with mode: [move_left]
-      # before "left". Until one exists, move_left behaves exactly like default.
       # Left numbers mode: F keys in "left_numbers" above, brackets in the keymap
       # below, since they need Shift combos.
 
@@ -183,7 +190,7 @@ pipeline:
           KP2: SLASH
           SPACE: RIGHTSHIFT
 
-          # Hold to put the left pad in move mode (no-op for now).
+          # Hold to put the left pad in move mode.
           HOMEPAGE:
             skip_key_event: true
             press: { set_mode: move_left }

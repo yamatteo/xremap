@@ -291,7 +291,7 @@ fn scenarios() -> Vec<(&'static str, Vec<Step>)> {
     // Meta holds: X and DOT.
     s.push(("hold_x_meta", vec![P(L, K::KEY_KP6), P(RR, K::KEY_KP9), R(RR, K::KEY_KP9), R(L, K::KEY_KP6)]));
     s.push(("hold_dot_meta", vec![P(RR, K::KEY_KP5), P(L, K::KEY_KP7), R(L, K::KEY_KP7), R(RR, K::KEY_KP5)]));
-    // Move-mode layer-taps: Z (right pad arrows) and SLASH (left pad move mode, a no-op for now).
+    // Move-mode layer-taps: Z (right pad arrows) and SLASH (left pad move mode).
     s.push((
         "layer_z_move_right",
         vec![
