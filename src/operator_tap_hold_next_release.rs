@@ -1,4 +1,4 @@
-use crate::config::expmap_operator::TapHoldNextRelease;
+use crate::config::expmap_operator::{TapHoldAction, TapHoldNextRelease};
 use crate::device::InputDeviceInfo;
 use crate::emit_handler::Emit;
 use crate::event::{Event, KeyEvent};
@@ -13,7 +13,7 @@ use std::time::{Duration, Instant};
 #[derive(Debug)]
 pub struct TapHoldNextReleaseOperator {
     tap: Vec<Key>,
-    hold: Vec<Key>,
+    hold: TapHoldAction,
     timeout: Duration,
     timeout_button: Option<Vec<Key>>,
     timeout_manager: Rc<TimeoutManager>,
@@ -57,6 +57,7 @@ impl StaticOperator for TapHoldNextReleaseOperator {
                 pressed_after: HashSet::new(),
                 state: State::New,
                 active_hold_keys: vec![],
+                mode_set: false,
             }),
             _ => unreachable!(),
         }
@@ -76,7 +77,7 @@ pub struct ActiveTapHoldNextReleaseOperator {
     device: Rc<InputDeviceInfo>,
     key: Key,
     tap: Vec<Key>,
-    hold: Vec<Key>,
+    hold: TapHoldAction,
     timeout: Duration,
     timeout_button: Option<Vec<Key>>,
     start_inst: Instant,
@@ -84,6 +85,48 @@ pub struct ActiveTapHoldNextReleaseOperator {
     pressed_after: HashSet<Key>,
     state: State,
     active_hold_keys: Vec<Key>,
+    // The hold set a mode, which must be reset on release.
+    mode_set: bool,
+}
+
+impl ActiveTapHoldNextReleaseOperator {
+    // The same keycode on another device is a different key.
+    fn is_trigger(&self, device: &InputDeviceInfo, key_event: &KeyEvent) -> bool {
+        key_event.key == self.key && device.path == self.device.path
+    }
+
+    fn start_hold(&mut self, device: Rc<InputDeviceInfo>, timed_out: bool) -> Vec<Emit> {
+        self.state = State::Held;
+        let hold = match (&self.timeout_button, timed_out) {
+            (Some(keys), true) => TapHoldAction::Keys(keys.clone()),
+            _ => self.hold.clone(),
+        };
+        match hold {
+            TapHoldAction::Keys(keys) => {
+                let emit = keys.iter().map(|k| Emit::key_press(device.clone(), *k)).collect();
+                self.active_hold_keys = keys;
+                emit
+            }
+            TapHoldAction::SetMode(mode) => {
+                self.mode_set = true;
+                vec![Emit::Single(Event::SetMode(Some(mode)))]
+            }
+        }
+    }
+
+    fn end_hold(&mut self, device: Rc<InputDeviceInfo>) -> Vec<Emit> {
+        self.state = State::Done;
+        let mut emit: Vec<Emit> = self
+            .active_hold_keys
+            .iter()
+            .rev()
+            .map(|k| Emit::key_release(device.clone(), *k))
+            .collect();
+        if self.mode_set {
+            emit.push(Emit::Single(Event::SetMode(None)));
+        }
+        emit
+    }
 }
 
 impl ActiveOperator for ActiveTapHoldNextReleaseOperator {
@@ -94,7 +137,7 @@ impl ActiveOperator for ActiveTapHoldNextReleaseOperator {
                 OperatorAction::Undecided
             }
             State::Undecided => {
-                if key_event.key == self.key {
+                if self.is_trigger(&device, key_event) {
                     // Suppress spurious press of the trigger key while undecided
                     OperatorAction::Undecided
                 } else {
@@ -104,7 +147,7 @@ impl ActiveOperator for ActiveTapHoldNextReleaseOperator {
                 }
             }
             State::Held => {
-                if key_event.key == self.key {
+                if self.is_trigger(&device, key_event) {
                     // Suppress spurious press of the trigger key while held
                     OperatorAction::Partial(vec![], vec![])
                 } else {
@@ -119,7 +162,7 @@ impl ActiveOperator for ActiveTapHoldNextReleaseOperator {
         match &mut self.state {
             State::New => unreachable!(),
             State::Undecided => {
-                if key_event.key == self.key {
+                if self.is_trigger(&device, key_event) {
                     // Trigger key released before any post-pressed key release -> TAP!
                     self.state = State::Done;
                     let mut emit = vec![];
@@ -133,9 +176,7 @@ impl ActiveOperator for ActiveTapHoldNextReleaseOperator {
                     OperatorAction::Done(emit, unhandled)
                 } else if self.pressed_after.contains(&key_event.key) {
                     // A key pressed AFTER the trigger was released while trigger is held -> HOLD!
-                    self.state = State::Held;
-                    self.active_hold_keys = self.hold.clone();
-                    let emit = self.hold.iter().map(|k| Emit::key_press(device.clone(), *k)).collect();
+                    let emit = self.start_hold(self.device.clone(), false);
 
                     self.buffered.push(Event::KeyEvent(device, key_event.clone()));
                     let unhandled = std::mem::take(&mut self.buffered);
@@ -149,16 +190,9 @@ impl ActiveOperator for ActiveTapHoldNextReleaseOperator {
                 }
             }
             State::Held => {
-                if key_event.key == self.key {
-                    // Trigger key released -> release held keys!
-                    self.state = State::Done;
-                    let emit = self
-                        .active_hold_keys
-                        .iter()
-                        .rev()
-                        .map(|k| Emit::key_release(device.clone(), *k))
-                        .collect();
-                    OperatorAction::Done(emit, vec![])
+                if self.is_trigger(&device, key_event) {
+                    // Trigger key released -> release held keys, or reset the mode!
+                    OperatorAction::Done(self.end_hold(device), vec![])
                 } else {
                     OperatorAction::Unhandled
                 }
@@ -171,7 +205,7 @@ impl ActiveOperator for ActiveTapHoldNextReleaseOperator {
         match &mut self.state {
             State::New => unreachable!(),
             State::Undecided => {
-                if key_event.key == self.key {
+                if self.is_trigger(&device, key_event) {
                     OperatorAction::Undecided
                 } else {
                     self.buffered.push(Event::KeyEvent(device, key_event.clone()));
@@ -179,7 +213,7 @@ impl ActiveOperator for ActiveTapHoldNextReleaseOperator {
                 }
             }
             State::Held => {
-                if key_event.key == self.key {
+                if self.is_trigger(&device, key_event) {
                     let emit = self
                         .active_hold_keys
                         .iter()
@@ -202,13 +236,7 @@ impl ActiveOperator for ActiveTapHoldNextReleaseOperator {
                     OperatorAction::Undecided
                 } else {
                     // Timeout elapsed -> HOLD!
-                    self.state = State::Held;
-                    let hold_keys = self.timeout_button.clone().unwrap_or_else(|| self.hold.clone());
-                    self.active_hold_keys = hold_keys.clone();
-                    let emit = hold_keys
-                        .into_iter()
-                        .map(|k| Emit::key_press(self.device.clone(), k))
-                        .collect();
+                    let emit = self.start_hold(self.device.clone(), true);
                     let unhandled = std::mem::take(&mut self.buffered);
                     OperatorAction::Partial(emit, unhandled)
                 }

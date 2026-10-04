@@ -1,4 +1,5 @@
 use crate::config::application::ApplicationMatch;
+use crate::config::device::DeviceMatcher;
 use crate::config::expmap_operator::ExpmapAction;
 use crate::device::InputDeviceInfo;
 use crate::emit_handler::Emit;
@@ -88,4 +89,6 @@ pub struct OperatorEntry {
     pub operator: Box<dyn StaticOperator>,
     pub application: Option<ApplicationMatch>,
     pub title: Option<ApplicationMatch>,
+    pub device: Option<DeviceMatcher>,
+    pub mode: Option<Vec<String>>,
 }

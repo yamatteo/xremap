@@ -1,4 +1,6 @@
 use crate::config::application::ApplicationMatch;
+use crate::config::deserializers::deserialize_string_or_vec;
+use crate::config::device::DeviceMatcher;
 use crate::config::modmap::KeyWrapper;
 use crate::config::{expmap_operator::ExpmapOperator, expmap_simkey::Simkey};
 use evdev::KeyCode as Key;
@@ -17,6 +19,9 @@ pub struct Expmap {
     pub remap: IndexMap<Key, ExpmapOperator>,
     pub application: Option<ApplicationMatch>,
     pub window: Option<ApplicationMatch>,
+    pub device: Option<DeviceMatcher>,
+    #[serde(default, deserialize_with = "deserialize_string_or_vec")]
+    pub mode: Option<Vec<String>>,
 }
 
 fn deserialize_experimental_remap<'de, D>(deserializer: D) -> Result<IndexMap<Key, ExpmapOperator>, D::Error>

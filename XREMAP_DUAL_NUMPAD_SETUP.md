@@ -40,10 +40,10 @@ Pre-built binaries are published for each desktop environment on GitHub.
    sudo apt install build-essential libx11-dev
    ```
 
-3. **Clone the repository and build** with the feature matching your desktop environment (GNOME shown here):
+3. **Clone the repository and build** with the feature matching your desktop environment (GNOME shown here). The branch below carries the dual numpad example and the operator features it uses (layer-tap, and `device:`/`mode:` filters on `experimental_map`); the systemd unit expects the checkout at `~/xremap`:
    ```bash
-   git clone https://github.com/xremap/xremap.git
-   cd xremap
+   git clone -b feat/tap-hold-next-release https://github.com/yamatteo/xremap.git ~/xremap
+   cd ~/xremap
    cargo build --release --features gnome
    ```
 
@@ -127,83 +127,32 @@ ls -l /dev/input/by-id/numpad-*
 
 ---
 
-## 4. Create the `xremap` Configuration File
+## 4. Get the `xremap` Configuration Files
 
-Create the configuration directory and file:
+The configuration and the systemd unit live in this repository, under
+[`example/dual_numpad/`](example/dual_numpad/):
+
+| File | Purpose |
+| --- | --- |
+| `config.yml` | Maps the raw numpad keycodes of each pad to letters, and handles the homerow tap-holds and the move and numbers modes. |
+| `xremap.service` | Runs xremap with `config.yml`. |
+
+`config.yml` has three parts, applied in this order:
+
+- `experimental_map`: tap-hold on the homerow. R S T and N E I are modifiers when held;
+  A and O are layer-taps, held for numbers on the opposite pad. Each entry is limited to
+  one pad with `device:`, and to the modes where its key is still a letter with `mode:`.
+- `modmap`: per-pad keycode to letter mapping, and the move and numbers modes.
+- `keymap`: the left numbers mode, which needs Shift combos.
+
+The unit reads the config straight from the checkout and expects it at `~/xremap`. If you
+did not already clone it while building from source:
+
 ```bash
-mkdir -p ~/.config/xremap
+git clone -b feat/tap-hold-next-release https://github.com/yamatteo/xremap.git ~/xremap
 ```
 
-Create `~/.config/xremap/config.yml`:
-
-```yaml
-modmap:
-  - name: base_left
-    device:
-      only:
-        - /dev/input/by-id/numpad-left-kbd
-        - /dev/input/by-id/numpad-left-consumer
-    remap:
-      KP0: TAB
-      KP1: Q
-      KP4: W
-      KP7: F
-      NUMLOCK: P
-      HOMEPAGE: G
-
-      SPACE: BACKSPACE
-      KP2: A
-      KP5: R
-      KP8: S
-      KPSLASH: T
-      TAB: D
-
-      KPDOT: ESC
-      KP3: Z
-      KP6: X
-      KP9: C
-      KPASTERISK: V
-      MAIL: B
-
-      KPENTER: ESC
-      KPPLUS: ESC
-      KPMINUS: ESC
-      BACKSPACE: ESC
-      CALC: SPACE
-
-  - name: base_right
-    device:
-      only:
-        - /dev/input/by-id/numpad-right-kbd
-        - /dev/input/by-id/numpad-right-consumer
-    remap:
-      CALC: J
-      BACKSPACE: L
-      KPMINUS: U
-      KPPLUS: Y
-      KPENTER: SEMICOLON
-
-      MAIL: H
-      KPASTERISK: N
-      KP9: E
-      KP6: I
-      KP3: O
-      KPDOT: DELETE
-
-      TAB: K
-      KPSLASH: M
-      KP8: COMMA
-      KP5: DOT
-      KP2: SLASH
-      SPACE: ESC
-
-      HOMEPAGE: ENTER
-      NUMLOCK: P
-      KP7: F
-      KP4: W
-      KP1: Q
-      KP0: TAB
-```
+If you keep the checkout elsewhere, adjust the `ExecStart=` path in the unit file.
 
 ---
 
@@ -214,14 +163,18 @@ modmap:
    mkdir -p ~/.config/systemd/user
    ```
 
-2. **Create `~/.config/systemd/user/xremap.service`:**
+2. **Link `xremap.service` into it:**
+   ```bash
+   ln -s ~/xremap/example/dual_numpad/xremap.service ~/.config/systemd/user/
+   ```
+
+   The unit is:
    ```ini
    [Unit]
-   Description=xremap dual numpad service
-   After=default.target
+   Description=xremap key remapper
 
    [Service]
-   ExecStart=/usr/local/bin/xremap --watch --device "SIGMACHIP" %h/.config/xremap/config.yml
+   ExecStart=/usr/local/bin/xremap --watch=config,device --device "SIGMACHIP" %h/xremap/example/dual_numpad/config.yml
    Restart=always
    RestartSec=3
    StandardOutput=journal
@@ -230,6 +183,9 @@ modmap:
    [Install]
    WantedBy=default.target
    ```
+
+   `--watch=config,device` reloads `config.yml` when it is edited and picks up the numpads
+   when they are plugged in later.
 
 3. **Enable and start the service:**
    ```bash
@@ -239,43 +195,20 @@ modmap:
 
 ---
 
-## 6. Set Up the Layers Service (tap-hold homerow mods)
+## 6. Upgrading from the Two-Service Setup
 
-`layers.yml` applies a second remap pass (e.g. tap-hold homerow mods) on top of the merged
-output produced by `xremap.service`. Since it needs to grab the virtual `xremap-numpads`
-device, this service must start *after* the first one is already running and producing that
-device.
+Earlier versions of this setup ran the homerow tap-holds in a second instance,
+`xremap-layers.service`, reading `layers.yml`. Both are now part of `config.yml`. If you
+had it installed, remove it, since it would sit idle waiting for a device that no longer
+exists. Rebuild and reinstall the binary first (Option B in section 1): older builds reject
+the `device:` and `mode:` fields that `config.yml` now uses in `experimental_map`.
 
-1. **Create `~/.config/systemd/user/xremap-layers.service`:**
-   ```ini
-   [Unit]
-   Description=xremap key remapper for numpad layers (tap-hold homerow mods)
-   After=xremap.service
-   BindsTo=xremap.service
-
-   [Service]
-   ExecStart=/usr/local/bin/xremap --watch --device "xremap-numpads" %h/.config/xremap/layers.yml
-   Restart=always
-   RestartSec=3
-   StandardOutput=journal
-   StandardError=journal
-
-   [Install]
-   WantedBy=default.target
-   ```
-
-   `After=` orders it behind `xremap.service`, and `BindsTo=` ties its lifecycle to it: if
-   `xremap.service` stops or restarts (e.g. after editing `config.yml`), `xremap-layers.service`
-   is stopped too, and will start back up once `xremap.service` is running again.
-
-2. **Enable and start the service:**
-   ```bash
-   systemctl --user daemon-reload
-   systemctl --user enable --now xremap-layers.service
-   ```
-
-   Enabling `xremap-layers.service` also starts `xremap.service` first, thanks to the
-   `BindsTo=`/`After=` ordering above.
+```bash
+systemctl --user disable --now xremap-layers.service
+rm ~/.config/systemd/user/xremap-layers.service
+systemctl --user daemon-reload
+systemctl --user restart xremap.service
+```
 
 ---
 
@@ -291,12 +224,18 @@ device.
   journalctl --user -fu xremap.service
   ```
 
-- **Restart Service After Editing Config:**
+- **After Editing a Config:** nothing to do, `--watch=config,device` reloads it on save.
+
+- **Restart After Editing a Unit File or Reinstalling the Binary:**
   ```bash
+  systemctl --user daemon-reload
   systemctl --user restart xremap.service
   ```
 
-- **Test Manually in Terminal (Debugging):**
+- **Test Manually in Terminal (Debugging):** stop the service first, then run:
   ```bash
-  xremap --watch --device "SIGMACHIP" ~/.config/xremap/config.yml
+  systemctl --user stop xremap.service
+  xremap --watch=config,device --device "SIGMACHIP" ~/xremap/example/dual_numpad/config.yml
   ```
+
+  Mode changes are printed as `mode: <name>`.

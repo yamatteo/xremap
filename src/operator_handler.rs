@@ -78,16 +78,30 @@ impl OperatorHandler {
     #[cfg(test)]
     pub fn map_evs(&mut self, events: Vec<Event>) -> Vec<Event> {
         let mut wmclient = WMClient::new("none", Box::new(crate::client::null_client::NullClient), false);
-        self.map_events(events, &mut wmclient)
+        self.map_events(events, "default", "default", &mut wmclient)
     }
 
-    pub fn map_events(&mut self, events: Vec<Event>, wmclient: &mut WMClient) -> Vec<Event> {
+    /// `mode` is the mode EventHandler is in. Operators can change it while the events
+    /// are processed, which is tracked here, so replayed events see the new mode.
+    pub fn map_events(
+        &mut self,
+        events: Vec<Event>,
+        mode: &str,
+        default_mode: &str,
+        wmclient: &mut WMClient,
+    ) -> Vec<Event> {
+        let mut mode = Mode {
+            current: mode.to_string(),
+            default: default_mode,
+        };
+
         events
             .into_iter()
             .flat_map(|event| {
                 self.emit_handler.on_event(&event);
 
-                let events = process_event(event, &mut self.active, &mut self.candidates, &self.lookup_map, wmclient);
+                let events =
+                    process_event(event, &mut self.active, &mut self.candidates, &self.lookup_map, &mut mode, wmclient);
 
                 self.emit_handler.map_output(events)
             })
@@ -125,6 +139,8 @@ fn append(
             operator,
             application: expmap.application.clone(),
             title: expmap.window.clone(),
+            device: expmap.device.clone(),
+            mode: expmap.mode.clone(),
         };
         match lookup_map.get_mut(&key) {
             Some(current) => {
@@ -161,6 +177,21 @@ struct Candidates {
     operators: Vec<Candidate>,
 }
 
+struct Mode<'a> {
+    current: String,
+    default: &'a str,
+}
+
+impl Mode<'_> {
+    fn track(&mut self, emitted: &[Emit]) {
+        for Emit::Single(event) in emitted {
+            if let Event::SetMode(mode) = event {
+                self.current = mode.clone().unwrap_or_else(|| self.default.to_string());
+            }
+        }
+    }
+}
+
 // Nodes that exist on the stack, that still needs to be processed.
 #[derive(Debug)]
 enum Node {
@@ -179,6 +210,7 @@ fn process_event(
     right: &mut Vec<Box<dyn ActiveOperator>>,
     candidates: &mut Option<Candidates>,
     lookup_map: &HashMap<Key, Vec<OperatorEntry>>,
+    mode: &mut Mode,
     wmclient: &mut WMClient,
 ) -> Vec<Emit> {
     // The events that have passed fully through the operators.
@@ -206,12 +238,14 @@ fn process_event(
                         OperatorAction::Partial(emitted, unhandled) => {
                             // Leave operator where it is.
                             right.push(operator);
+                            mode.track(&emitted);
                             emit.extend(emitted);
 
                             unhandled_back_to_stack(unhandled, &mut left);
                         }
                         OperatorAction::Done(new_emit, unhandled) => {
                             // Implicitly drops operator
+                            mode.track(&new_emit);
                             emit.extend(new_emit);
                             unhandled_back_to_stack(unhandled, &mut left);
                         }
@@ -224,7 +258,7 @@ fn process_event(
                                 candidates.events.push(event.clone());
                                 try_candidates(event, &mut left, candidates)
                             }
-                            None => static_lookup(event, &mut left, candidates, &lookup_map, &mut emit, wmclient),
+                            None => static_lookup(event, &mut left, candidates, &lookup_map, &mut emit, mode, wmclient),
                         };
                     }
                 };
@@ -237,6 +271,7 @@ fn process_event(
             Some(Node::CandidateChosen(chosen)) => {
                 let candidate = candidates.take().unwrap().operators.into_iter().nth(chosen).unwrap();
 
+                mode.track(&candidate.emitted);
                 emit.extend(candidate.emitted);
 
                 if !matches!(candidate.state, CandidateState::Done) {
@@ -346,6 +381,7 @@ fn static_lookup(
     candidates: &mut Option<Candidates>,
     lookup_map: &HashMap<Key, Vec<OperatorEntry>>,
     emit: &mut Vec<Emit>,
+    mode: &Mode,
     wmclient: &mut WMClient,
 ) {
     let (device, key_event) = match &event {
@@ -374,6 +410,18 @@ fn static_lookup(
             let new_candidates: Vec<_> = entries
                 .iter()
                 .filter(|entry| {
+                    if let Some(modes) = &entry.mode {
+                        if !modes.contains(&mode.current) {
+                            return false;
+                        }
+                    }
+
+                    if let Some(device_matcher) = &entry.device {
+                        if !device_matcher.matches(device) {
+                            return false;
+                        }
+                    }
+
                     if let Some(window_matcher) = &entry.title {
                         if !wmclient.match_window(window_matcher) {
                             return false;

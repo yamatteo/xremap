@@ -102,7 +102,7 @@ impl EventHandler {
     ) -> Result<Vec<Action>, Box<dyn Error>> {
         if let Some(handler) = &mut self.operator_handler {
             wmclient.clear_app_class_and_title();
-            events = handler.map_events(events, wmclient);
+            events = handler.map_events(events, &self.mode, &config.default_mode, wmclient);
         };
 
         debug_assert!(self.actions.is_empty());
@@ -144,6 +144,11 @@ impl EventHandler {
                     Event::OverrideTimeout => self.timeout_override()?,
                     Event::Tick => {
                         // Can be ignored. It's for operators.
+                    }
+                    Event::SetMode(mode) => {
+                        let mode = mode.unwrap_or_else(|| config.default_mode.clone());
+                        println!("mode: {mode}");
+                        self.mode = mode;
                     }
                     Event::ByPassLocal(_) => unreachable!(),
                 }

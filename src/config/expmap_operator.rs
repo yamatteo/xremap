@@ -66,8 +66,7 @@ where
 pub struct TapHoldNextRelease {
     #[serde(deserialize_with = "deserialize_key_or_keys")]
     pub tap: Vec<Key>,
-    #[serde(deserialize_with = "deserialize_key_or_keys")]
-    pub hold: Vec<Key>,
+    pub hold: TapHoldAction,
     #[serde(
         default = "default_tap_hold_timeout",
         alias = "timeout_ms",
@@ -81,6 +80,20 @@ pub struct TapHoldNextRelease {
         deserialize_with = "deserialize_optional_key_or_keys"
     )]
     pub timeout_button: Option<Vec<Key>>,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(untagged)]
+pub enum TapHoldAction {
+    #[serde(deserialize_with = "deserialize_key_or_keys")]
+    Keys(Vec<Key>),
+    // Layer-tap: the mode is set while held, and reset to default_mode on release.
+    #[serde(deserialize_with = "deserialize_set_mode")]
+    SetMode(String),
+}
+
+fn deserialize_set_mode<'de, D: Deserializer<'de>>(deserializer: D) -> Result<String, D::Error> {
+    deserialize_single_field::<D, String>(deserializer, "set_mode")
 }
 
 fn default_tap_hold_timeout() -> Duration {

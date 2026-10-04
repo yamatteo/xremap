@@ -16,6 +16,9 @@ pub enum Event {
     OverrideTimeout,
     // Ticks for operators
     Tick,
+    // Mode change emitted by an operator. None means back to default_mode.
+    // It travels in the event stream, so events after it see the new mode.
+    SetMode(Option<String>),
     // By pass active operators adn static operators on the same level.
     //  This has the meaning, that the emitted operator has handled the event, created
     //  this synthetic event, that must not have effect on the same level.

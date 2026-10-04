@@ -736,3 +736,9 @@ pub fn assert_invalid_config(config: &str, expected: &str) {
 
     assert_eq!(&errmsg, expected);
 }
+
+#[test]
+fn test_parse_dual_numpad_example() {
+    let yaml = std::fs::read_to_string("example/dual_numpad/config.yml").unwrap();
+    yaml_assert_parse(&yaml);
+}

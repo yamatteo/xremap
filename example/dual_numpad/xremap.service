@@ -2,7 +2,7 @@
 Description=xremap key remapper
 
 [Service]
-ExecStart=/usr/local/bin/xremap --output-device-name xremap-numpads --watch=config,device --device "SIGMACHIP" %h/xremap/example/dual_numpad/config.yml
+ExecStart=/usr/local/bin/xremap --watch=config,device --device "SIGMACHIP" %h/xremap/example/dual_numpad/config.yml
 Restart=always
 RestartSec=3
 StandardOutput=journal

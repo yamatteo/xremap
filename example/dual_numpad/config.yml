@@ -1,3 +1,82 @@
+# Homerow tap-holds. Operators run before modmap, so they match the raw
+# keycodes of each pad, and a tap re-emits the same keycode for the modmap
+# below to turn into a letter. The mode lists keep a key from being a tap-hold
+# in the modes where it is not that letter (arrows, digits, brackets). Add new
+# modes to the lists where the key keeps its letter.
+experimental_map:
+  # R and S are the same letters in every mode.
+  - name: left_homerow
+    device:
+      only:
+        - /dev/input/by-id/numpad-left-kbd
+    remap:
+      KP5:                  # R
+        tap_hold_next_release:
+          tap: KP5
+          hold: LEFTALT
+          timeout: 200
+      KP8:                  # S
+        tap_hold_next_release:
+          tap: KP8
+          hold: LEFTSHIFT
+          timeout: 200
+
+  # In numbers_left, T is [ and A is left alone, so holding it can't reset
+  # the mode while O is held.
+  - name: left_homerow_but_numbers
+    device:
+      only:
+        - /dev/input/by-id/numpad-left-kbd
+    mode: [default, move_left, move_right, numbers_right]
+    remap:
+      KP2:                  # A, hold for right-pad numbers
+        tap_hold_next_release:
+          tap: KP2
+          hold: { set_mode: numbers_right }
+          timeout: 200
+      KPSLASH:              # T
+        tap_hold_next_release:
+          tap: KPSLASH
+          hold: LEFTCTRL
+          timeout: 200
+
+  # In numbers_right, E is 5 and O is -, and holding O can't reset the mode
+  # while A is held.
+  - name: right_homerow_but_numbers
+    device:
+      only:
+        - /dev/input/by-id/numpad-right-kbd
+    mode: [default, move_left, move_right, numbers_left]
+    remap:
+      KP3:                  # O, hold for left-pad numbers
+        tap_hold_next_release:
+          tap: KP3
+          hold: { set_mode: numbers_left }
+          timeout: 200
+      KP9:                  # E
+        tap_hold_next_release:
+          tap: KP9
+          hold: RIGHTSHIFT
+          timeout: 200
+
+  # N and I are also arrows in move_right, and must repeat when held.
+  - name: right_homerow_but_numbers_and_move
+    device:
+      only:
+        - /dev/input/by-id/numpad-right-kbd
+    mode: [default, move_left, numbers_left]
+    remap:
+      KPASTERISK:           # N
+        tap_hold_next_release:
+          tap: KPASTERISK
+          hold: RIGHTCTRL
+          timeout: 200
+      KP6:                  # I
+        tap_hold_next_release:
+          tap: KP6
+          hold: RIGHTALT
+          timeout: 200
+
 modmap:
   - name: left
     device:
@@ -41,9 +120,7 @@ modmap:
         press: { set_mode: move_right }
         release: { set_mode: default }
 
-  # Move mode is handled here, on the raw keycodes, so the arrows never reach
-  # the tap-hold-next-release homerow in layers.yml. Keys not listed fall
-  # through to the "right" entry below (first match wins).
+  # Keys not listed fall through to the "right" entry below (first match wins).
   - name: right_move
     device:
       only:
