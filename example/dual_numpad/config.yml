@@ -118,30 +118,63 @@ pipeline:
               hold: { set_mode: move_left }
               timeout: 200
 
+      func_layer_tap:
+        mode: [default]
+        remap:
+          Q:                    # hold for func, used on the right side
+            tap_hold_next_release:
+              tap: Q
+              hold: { set_mode: func }
+              timeout: 200
+          SEMICOLON:            # hold for func, used on the left side
+            tap_hold_next_release:
+              tap: SEMICOLON
+              hold: { set_mode: func }
+              timeout: 200
+
   # --- 3. Layers
   - stage:
-      # F keys and brackets on the left side.
+      # Brackets on the left side.
       left_numbers:
         mode: [numbers_left]
         remap:
-          TAB: F1
-          Q: F2
-          W: F3
-          F: F4
           P: [LEFTSHIFT, KEY_9]           # (
           G: [LEFTSHIFT, KEY_0]           # )
-          BACKSPACE: F5
-          A: F6
-          R: F7
-          S: F8
           T: LEFTBRACE                    # [
           D: RIGHTBRACE                   # ]
-          LEFTSHIFT: F9
-          Z: F10
-          X: F11
-          C: F12
           V: [LEFTSHIFT, LEFTBRACE]       # {
           B: [LEFTSHIFT, RIGHTBRACE]      # }
+
+      # F keys on the right side, where numbers_right has the digits. Media and
+      # system keys on the left side.
+      func:
+        mode: [func]
+        remap:
+          J: F11
+          L: F7
+          U: F8
+          Y: F9
+          H: F12
+          N: F4
+          E: F5
+          I: F6
+          K: F10
+          M: F1
+          COMMA: F2
+          DOT: F3
+
+          Q: VOLUMEDOWN
+          W: MUTE
+          F: VOLUMEUP
+          P: SYSRQ                        # Print Screen
+          G: COMPOSE                      # Menu
+          A: PREVIOUSSONG
+          R: PLAYPAUSE
+          S: NEXTSONG
+          T: SCROLLLOCK
+          D: PAUSE
+          Z: BRIGHTNESSDOWN
+          X: BRIGHTNESSUP
 
       left_move:
         mode: [move_left]

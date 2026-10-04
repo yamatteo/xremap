@@ -145,7 +145,8 @@ the one before:
 1. Physical to logical keys: each pad's keycodes to the logical keyboard in
    [`stage_one_visualization.md`](example/dual_numpad/stage_one_visualization.md). This is the
    only device-specific stage; another keyboard needs only a different stage 1.
-2. Layer-taps: A and Z held for numbers and move mode on the right side, O and SLASH for the left side.
+2. Layer-taps: A and Z held for numbers and move mode on the right side, O and SLASH for the left side,
+   Q and SEMICOLON for the func layer (F keys on the right, media and system keys on the left).
 3. Layers: the move and numbers modes, including the brackets of the left numbers mode.
 4. Home-row mods: R S T X and N E I DOT are modifiers when held.
 

@@ -289,10 +289,10 @@ fn scenarios() -> Vec<(&'static str, Vec<Step>)> {
     s.push((
         "repeat_plain",
         vec![
-            P(L, K::KEY_KP1),
-            Rep(L, K::KEY_KP1),
-            Rep(L, K::KEY_KP1),
-            R(L, K::KEY_KP1),
+            P(L, K::KEY_KP4),
+            Rep(L, K::KEY_KP4),
+            Rep(L, K::KEY_KP4),
+            R(L, K::KEY_KP4),
         ],
     ));
     // Meta holds: X and DOT.
@@ -334,7 +334,24 @@ fn scenarios() -> Vec<(&'static str, Vec<Step>)> {
         v.push(R(RR, K::KEY_KP3));
         v
     }));
-    // KPDOT is F9 in numbers_left, even though it's LEFTSHIFT in the other modes.
+    // func: hold Q (left KP1) for the right side, SEMICOLON (right KPENTER) for the left side.
+    s.push(("func_right", {
+        let mut v = vec![P(L, K::KEY_KP1), P(RR, K::KEY_KPSLASH), R(RR, K::KEY_KPSLASH)];
+        v.extend(right.iter().flat_map(|k| tap(RR, *k)));
+        v.extend(tap(RC, K::KEY_CALC));
+        v.extend(tap(RC, K::KEY_MAIL));
+        v.push(R(L, K::KEY_KP1));
+        v
+    }));
+    s.push(("func_left", {
+        let mut v = vec![P(RR, K::KEY_KPENTER), P(L, K::KEY_KP1), R(L, K::KEY_KP1)];
+        v.extend(left.iter().flat_map(|k| tap(L, *k)));
+        v.extend(tap(LC, K::KEY_HOMEPAGE));
+        v.extend(tap(LC, K::KEY_MAIL));
+        v.push(R(RR, K::KEY_KPENTER));
+        v
+    }));
+    // KPDOT in numbers_left.
     s.push((
         "kpdot_in_numbers_left",
         vec![

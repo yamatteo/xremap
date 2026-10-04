@@ -1,8 +1,8 @@
 == taps_left
   KEY_KP0, value: Press        -> KEY_TAB:Press 
   KEY_KP0, value: Release      -> KEY_TAB:Release 
-  KEY_KP1, value: Press        -> KEY_Q:Press 
-  KEY_KP1, value: Release      -> KEY_Q:Release 
+  KEY_KP1, value: Press        -> 
+  KEY_KP1, value: Release      -> KEY_Q:Press KEY_Q:Release 
   KEY_KP4, value: Press        -> KEY_W:Press 
   KEY_KP4, value: Release      -> KEY_W:Release 
   KEY_KP7, value: Press        -> KEY_F:Press 
@@ -51,8 +51,8 @@
   KEY_KPMINUS, value: Release  -> KEY_U:Release 
   KEY_KPPLUS, value: Press     -> KEY_Y:Press 
   KEY_KPPLUS, value: Release   -> KEY_Y:Release 
-  KEY_KPENTER, value: Press    -> KEY_SEMICOLON:Press 
-  KEY_KPENTER, value: Release  -> KEY_SEMICOLON:Release 
+  KEY_KPENTER, value: Press    -> 
+  KEY_KPENTER, value: Release  -> KEY_SEMICOLON:Press KEY_SEMICOLON:Release 
   KEY_KPASTERISK, value: Press -> 
   KEY_KPASTERISK, value: Release -> KEY_N:Press KEY_N:Release 
   KEY_KP9, value: Press        -> 
@@ -222,10 +222,10 @@
   KEY_HOMEPAGE, value: Release -> KEY_LEFTSHIFT:Release KEY_0:Release 
   KEY_MAIL, value: Press       -> KEY_LEFTSHIFT:Press KEY_RIGHTBRACE:Press 
   KEY_MAIL, value: Release     -> KEY_LEFTSHIFT:Release KEY_RIGHTBRACE:Release 
-  KEY_KP2, value: Press        -> KEY_F6:Press 
-  KEY_KP2, value: Release      -> KEY_F6:Release 
-  KEY_KP5, value: Press        -> KEY_F7:Press 
-  KEY_KP5, value: Release      -> KEY_F7:Release 
+  KEY_KP2, value: Press        -> KEY_A:Press 
+  KEY_KP2, value: Release      -> KEY_A:Release 
+  KEY_KP5, value: Press        -> 
+  KEY_KP5, value: Release      -> KEY_R:Press KEY_R:Release 
   KEY_KP3, value: Release      -> 
 == layer_a_then_o
   KEY_KP2, value: Press        -> 
@@ -242,8 +242,8 @@
   KEY_KPMINUS, value: Release  -> KEY_U:Release 
   KEY_KPPLUS, value: Press     -> KEY_Y:Press 
   KEY_KPPLUS, value: Release   -> KEY_Y:Release 
-  KEY_KPENTER, value: Press    -> KEY_SEMICOLON:Press 
-  KEY_KPENTER, value: Release  -> KEY_SEMICOLON:Release 
+  KEY_KPENTER, value: Press    -> 
+  KEY_KPENTER, value: Release  -> KEY_SEMICOLON:Press KEY_SEMICOLON:Release 
   KEY_KPASTERISK, value: Press -> 
   KEY_KPASTERISK, value: Release -> KEY_N:Press KEY_N:Release 
   KEY_KP9, value: Press        -> 
@@ -328,8 +328,8 @@
   KEY_SPACE, value: Press      -> KEY_RIGHTSHIFT:Press 
   KEY_KP0, value: Press        -> KEY_TAB:Press 
   KEY_KP0, value: Release      -> KEY_TAB:Release 
-  KEY_KP1, value: Press        -> KEY_Q:Press 
-  KEY_KP1, value: Release      -> KEY_Q:Release 
+  KEY_KP1, value: Press        -> 
+  KEY_KP1, value: Release      -> KEY_Q:Press KEY_Q:Release 
   KEY_KP4, value: Press        -> KEY_W:Press 
   KEY_KP4, value: Release      -> KEY_W:Release 
   KEY_KP7, value: Press        -> KEY_F:Press 
@@ -429,10 +429,10 @@
   KEY_KP8, value: Release      -> KEY_COMMA:Release 
   KEY_KP3, value: Release      -> 
 == repeat_plain
-  KEY_KP1, value: Press        -> KEY_Q:Press 
-  KEY_KP1, value: Repeat       -> KEY_Q:Repeat 
-  KEY_KP1, value: Repeat       -> KEY_Q:Repeat 
-  KEY_KP1, value: Release      -> KEY_Q:Release 
+  KEY_KP4, value: Press        -> KEY_W:Press 
+  KEY_KP4, value: Repeat       -> KEY_W:Repeat 
+  KEY_KP4, value: Repeat       -> KEY_W:Repeat 
+  KEY_KP4, value: Release      -> KEY_W:Release 
 == hold_x_meta
   KEY_KP6, value: Press        -> 
   KEY_KP9, value: Press        -> 
@@ -466,35 +466,35 @@
 == layer_o_all_left
   KEY_KP3, value: Press        -> 
   KEY_KP7, value: Press        -> 
-  KEY_KP7, value: Release      -> KEY_F4:Press KEY_F4:Release 
-  KEY_KP0, value: Press        -> KEY_F1:Press 
-  KEY_KP0, value: Release      -> KEY_F1:Release 
-  KEY_KP1, value: Press        -> KEY_F2:Press 
-  KEY_KP1, value: Release      -> KEY_F2:Release 
-  KEY_KP4, value: Press        -> KEY_F3:Press 
-  KEY_KP4, value: Release      -> KEY_F3:Release 
-  KEY_KP7, value: Press        -> KEY_F4:Press 
-  KEY_KP7, value: Release      -> KEY_F4:Release 
+  KEY_KP7, value: Release      -> KEY_F:Press KEY_F:Release 
+  KEY_KP0, value: Press        -> KEY_TAB:Press 
+  KEY_KP0, value: Release      -> KEY_TAB:Release 
+  KEY_KP1, value: Press        -> KEY_Q:Press 
+  KEY_KP1, value: Release      -> KEY_Q:Release 
+  KEY_KP4, value: Press        -> KEY_W:Press 
+  KEY_KP4, value: Release      -> KEY_W:Release 
+  KEY_KP7, value: Press        -> KEY_F:Press 
+  KEY_KP7, value: Release      -> KEY_F:Release 
   KEY_NUMLOCK, value: Press    -> KEY_LEFTSHIFT:Press KEY_9:Press 
   KEY_NUMLOCK, value: Release  -> KEY_LEFTSHIFT:Release KEY_9:Release 
-  KEY_SPACE, value: Press      -> KEY_F5:Press 
-  KEY_SPACE, value: Release    -> KEY_F5:Release 
-  KEY_KP2, value: Press        -> KEY_F6:Press 
-  KEY_KP2, value: Release      -> KEY_F6:Release 
-  KEY_KP5, value: Press        -> KEY_F7:Press 
-  KEY_KP5, value: Release      -> KEY_F7:Release 
-  KEY_KP8, value: Press        -> KEY_F8:Press 
-  KEY_KP8, value: Release      -> KEY_F8:Release 
+  KEY_SPACE, value: Press      -> KEY_BACKSPACE:Press 
+  KEY_SPACE, value: Release    -> KEY_BACKSPACE:Release 
+  KEY_KP2, value: Press        -> KEY_A:Press 
+  KEY_KP2, value: Release      -> KEY_A:Release 
+  KEY_KP5, value: Press        -> 
+  KEY_KP5, value: Release      -> KEY_R:Press KEY_R:Release 
+  KEY_KP8, value: Press        -> 
+  KEY_KP8, value: Release      -> KEY_S:Press KEY_S:Release 
   KEY_KPSLASH, value: Press    -> KEY_LEFTBRACE:Press 
   KEY_KPSLASH, value: Release  -> KEY_LEFTBRACE:Release 
   KEY_TAB, value: Press        -> KEY_RIGHTBRACE:Press 
   KEY_TAB, value: Release      -> KEY_RIGHTBRACE:Release 
-  KEY_KP3, value: Press        -> KEY_F10:Press 
-  KEY_KP3, value: Release      -> KEY_F10:Release 
-  KEY_KP6, value: Press        -> KEY_F11:Press 
-  KEY_KP6, value: Release      -> KEY_F11:Release 
-  KEY_KP9, value: Press        -> KEY_F12:Press 
-  KEY_KP9, value: Release      -> KEY_F12:Release 
+  KEY_KP3, value: Press        -> KEY_Z:Press 
+  KEY_KP3, value: Release      -> KEY_Z:Release 
+  KEY_KP6, value: Press        -> 
+  KEY_KP6, value: Release      -> KEY_X:Press KEY_X:Release 
+  KEY_KP9, value: Press        -> KEY_C:Press 
+  KEY_KP9, value: Release      -> KEY_C:Release 
   KEY_KPASTERISK, value: Press -> KEY_LEFTSHIFT:Press KEY_LEFTBRACE:Press 
   KEY_KPASTERISK, value: Release -> KEY_LEFTSHIFT:Release KEY_LEFTBRACE:Release 
   KEY_KPENTER, value: Press    -> KEY_LEFTCTRL:Press 
@@ -510,10 +510,104 @@
   KEY_MAIL, value: Press       -> KEY_LEFTSHIFT:Press KEY_RIGHTBRACE:Press 
   KEY_MAIL, value: Release     -> KEY_LEFTSHIFT:Release KEY_RIGHTBRACE:Release 
   KEY_KP3, value: Release      -> 
+== func_right
+  KEY_KP1, value: Press        -> 
+  KEY_KPSLASH, value: Press    -> 
+  KEY_KPSLASH, value: Release  -> KEY_F1:Press KEY_F1:Release 
+  KEY_BACKSPACE, value: Press  -> KEY_F7:Press 
+  KEY_BACKSPACE, value: Release -> KEY_F7:Release 
+  KEY_KPMINUS, value: Press    -> KEY_F8:Press 
+  KEY_KPMINUS, value: Release  -> KEY_F8:Release 
+  KEY_KPPLUS, value: Press     -> KEY_F9:Press 
+  KEY_KPPLUS, value: Release   -> KEY_F9:Release 
+  KEY_KPENTER, value: Press    -> KEY_SEMICOLON:Press 
+  KEY_KPENTER, value: Release  -> KEY_SEMICOLON:Release 
+  KEY_KPASTERISK, value: Press -> KEY_F4:Press 
+  KEY_KPASTERISK, value: Release -> KEY_F4:Release 
+  KEY_KP9, value: Press        -> KEY_F5:Press 
+  KEY_KP9, value: Release      -> KEY_F5:Release 
+  KEY_KP6, value: Press        -> KEY_F6:Press 
+  KEY_KP6, value: Release      -> KEY_F6:Release 
+  KEY_KP3, value: Press        -> KEY_O:Press 
+  KEY_KP3, value: Release      -> KEY_O:Release 
+  KEY_KPDOT, value: Press      -> KEY_ENTER:Press 
+  KEY_KPDOT, value: Release    -> KEY_ENTER:Release 
+  KEY_TAB, value: Press        -> KEY_F10:Press 
+  KEY_TAB, value: Release      -> KEY_F10:Release 
+  KEY_KPSLASH, value: Press    -> KEY_F1:Press 
+  KEY_KPSLASH, value: Release  -> KEY_F1:Release 
+  KEY_KP8, value: Press        -> KEY_F2:Press 
+  KEY_KP8, value: Release      -> KEY_F2:Release 
+  KEY_KP5, value: Press        -> KEY_F3:Press 
+  KEY_KP5, value: Release      -> KEY_F3:Release 
+  KEY_KP2, value: Press        -> KEY_SLASH:Press 
+  KEY_KP2, value: Release      -> KEY_SLASH:Release 
+  KEY_NUMLOCK, value: Press    -> KEY_SPACE:Press 
+  KEY_NUMLOCK, value: Release  -> KEY_SPACE:Release 
+  KEY_KP7, value: Press        -> KEY_RIGHTALT:Press 
+  KEY_KP7, value: Release      -> KEY_RIGHTALT:Release 
+  KEY_KP4, value: Press        -> KEY_RIGHTMETA:Press 
+  KEY_KP4, value: Release      -> KEY_RIGHTMETA:Release 
+  KEY_KP1, value: Press        -> KEY_RIGHTCTRL:Press 
+  KEY_KP1, value: Release      -> KEY_RIGHTCTRL:Release 
+  KEY_KP0, value: Press        -> KEY_ESC:Press 
+  KEY_KP0, value: Release      -> KEY_ESC:Release 
+  KEY_CALC, value: Press       -> KEY_F11:Press 
+  KEY_CALC, value: Release     -> KEY_F11:Release 
+  KEY_MAIL, value: Press       -> KEY_F12:Press 
+  KEY_MAIL, value: Release     -> KEY_F12:Release 
+  KEY_KP1, value: Release      -> 
+== func_left
+  KEY_KPENTER, value: Press    -> 
+  KEY_KP1, value: Press        -> 
+  KEY_KP1, value: Release      -> KEY_VOLUMEDOWN:Press KEY_VOLUMEDOWN:Release 
+  KEY_KP0, value: Press        -> KEY_TAB:Press 
+  KEY_KP0, value: Release      -> KEY_TAB:Release 
+  KEY_KP1, value: Press        -> KEY_VOLUMEDOWN:Press 
+  KEY_KP1, value: Release      -> KEY_VOLUMEDOWN:Release 
+  KEY_KP4, value: Press        -> KEY_MUTE:Press 
+  KEY_KP4, value: Release      -> KEY_MUTE:Release 
+  KEY_KP7, value: Press        -> KEY_VOLUMEUP:Press 
+  KEY_KP7, value: Release      -> KEY_VOLUMEUP:Release 
+  KEY_NUMLOCK, value: Press    -> KEY_SYSRQ:Press 
+  KEY_NUMLOCK, value: Release  -> KEY_SYSRQ:Release 
+  KEY_SPACE, value: Press      -> KEY_BACKSPACE:Press 
+  KEY_SPACE, value: Release    -> KEY_BACKSPACE:Release 
+  KEY_KP2, value: Press        -> KEY_PREVIOUSSONG:Press 
+  KEY_KP2, value: Release      -> KEY_PREVIOUSSONG:Release 
+  KEY_KP5, value: Press        -> KEY_PLAYPAUSE:Press 
+  KEY_KP5, value: Release      -> KEY_PLAYPAUSE:Release 
+  KEY_KP8, value: Press        -> KEY_NEXTSONG:Press 
+  KEY_KP8, value: Release      -> KEY_NEXTSONG:Release 
+  KEY_KPSLASH, value: Press    -> KEY_SCROLLLOCK:Press 
+  KEY_KPSLASH, value: Release  -> KEY_SCROLLLOCK:Release 
+  KEY_TAB, value: Press        -> KEY_PAUSE:Press 
+  KEY_TAB, value: Release      -> KEY_PAUSE:Release 
+  KEY_KP3, value: Press        -> KEY_BRIGHTNESSDOWN:Press 
+  KEY_KP3, value: Release      -> KEY_BRIGHTNESSDOWN:Release 
+  KEY_KP6, value: Press        -> KEY_BRIGHTNESSUP:Press 
+  KEY_KP6, value: Release      -> KEY_BRIGHTNESSUP:Release 
+  KEY_KP9, value: Press        -> KEY_C:Press 
+  KEY_KP9, value: Release      -> KEY_C:Release 
+  KEY_KPASTERISK, value: Press -> KEY_V:Press 
+  KEY_KPASTERISK, value: Release -> KEY_V:Release 
+  KEY_KPENTER, value: Press    -> KEY_LEFTCTRL:Press 
+  KEY_KPENTER, value: Release  -> KEY_LEFTCTRL:Release 
+  KEY_KPPLUS, value: Press     -> KEY_LEFTMETA:Press 
+  KEY_KPPLUS, value: Release   -> KEY_LEFTMETA:Release 
+  KEY_KPMINUS, value: Press    -> KEY_LEFTALT:Press 
+  KEY_KPMINUS, value: Release  -> KEY_LEFTALT:Release 
+  KEY_BACKSPACE, value: Press  -> KEY_SPACE:Press 
+  KEY_BACKSPACE, value: Release -> KEY_SPACE:Release 
+  KEY_HOMEPAGE, value: Press   -> KEY_COMPOSE:Press 
+  KEY_HOMEPAGE, value: Release -> KEY_COMPOSE:Release 
+  KEY_MAIL, value: Press       -> KEY_B:Press 
+  KEY_MAIL, value: Release     -> KEY_B:Release 
+  KEY_KPENTER, value: Release  -> 
 == kpdot_in_numbers_left
   KEY_KP3, value: Press        -> 
   KEY_KPDOT, value: Press      -> 
-  KEY_KPDOT, value: Release    -> KEY_F9:Press KEY_F9:Release 
-  KEY_KP0, value: Press        -> KEY_F1:Press 
-  KEY_KP0, value: Release      -> KEY_F1:Release 
+  KEY_KPDOT, value: Release    -> KEY_LEFTSHIFT:Press KEY_LEFTSHIFT:Release 
+  KEY_KP0, value: Press        -> KEY_TAB:Press 
+  KEY_KP0, value: Release      -> KEY_TAB:Release 
   KEY_KP3, value: Release      -> 
