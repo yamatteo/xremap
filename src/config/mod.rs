@@ -18,7 +18,7 @@ pub mod validation;
 
 use crate::config::key::parse_key;
 use crate::config::keymap::{build_keymap_table, Keymap, KeymapEntry};
-use crate::config::stage::StageEntry;
+use crate::config::stage::{PipelineStep, StageEntry};
 use crate::config::validation::validate_config_file;
 use crate::event_handler::DISGUISED_EVENT_OFFSETTER;
 use crate::event_handler::MODIFIER_KEYS;
@@ -33,9 +33,9 @@ use std::{error, fs};
 #[serde(deny_unknown_fields)]
 pub struct Config {
     // Config interface
-    // Event stages, applied in order. Each stage is a list of entries.
+    // Event stages, applied in order, before keymap.
     #[serde(default = "Vec::new")]
-    pub stages: Vec<Vec<StageEntry>>,
+    pub pipeline: Vec<PipelineStep>,
     // Legacy sections, moved into `stages` by `resolve_stages`.
     #[serde(default = "Vec::new")]
     pub experimental_map: Vec<StageEntry>,
@@ -63,6 +63,9 @@ pub struct Config {
     pub shared: IgnoredAny,
 
     // Internals
+    // The stages of `pipeline`, or of the legacy sections. Set by `resolve_stages`.
+    #[serde(skip)]
+    pub stages: Vec<Vec<StageEntry>>,
     #[serde(skip)]
     pub keymap_table: HashMap<Key, Vec<KeymapEntry>>,
     #[serde(default = "const_true")]
@@ -105,7 +108,7 @@ pub fn load_configs(filenames: &[PathBuf]) -> Result<Config, Box<dyn error::Erro
             ConfigFiletype::Toml => toml::from_str(&config_contents)?,
         };
 
-        config.stages.extend(c.stages);
+        config.pipeline.extend(c.pipeline);
         config.experimental_map.extend(c.experimental_map);
         config.modmap.extend(c.modmap);
         config.keymap.extend(c.keymap);
@@ -115,20 +118,24 @@ pub fn load_configs(filenames: &[PathBuf]) -> Result<Config, Box<dyn error::Erro
     // Convert keymap for efficient keymap lookup
     config.keymap_table = build_keymap_table(&config.keymap);
 
-    validate_config_file(&config)?;
     resolve_stages(&mut config)?;
+    validate_config_file(&config)?;
 
     Ok(config)
 }
 
-// Moves the legacy sections into `stages`, so the rest of xremap only has to know about stages.
-// They become two stages, `experimental_map` first, as they were applied before.
+// Fills `stages` from `pipeline`, or from the legacy sections, so the rest of xremap only has to
+// know about stages. The legacy sections become two stages, `experimental_map` first, as they
+// were applied before.
 pub fn resolve_stages(config: &mut Config) -> anyhow::Result<()> {
     if config.experimental_map.is_empty() && config.modmap.is_empty() {
+        for step in std::mem::take(&mut config.pipeline) {
+            config.stages.push(step.into_entries()?);
+        }
         return Ok(());
     }
-    if !config.stages.is_empty() {
-        anyhow::bail!("`stages` can't be combined with `experimental_map` or `modmap`");
+    if !config.pipeline.is_empty() {
+        anyhow::bail!("`pipeline` can't be combined with `experimental_map` or `modmap`");
     }
     if !config.experimental_map.is_empty() {
         config.stages.push(std::mem::take(&mut config.experimental_map));

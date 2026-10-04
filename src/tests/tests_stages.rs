@@ -11,11 +11,15 @@ use std::time::Duration;
 fn test_stage_output_is_remapped_by_next_stage() {
     assert_actions(
         indoc! {"
-        stages:
-          - - remap:
-                A: B
-          - - remap:
-                B: C
+        pipeline:
+          - stage:
+              entry1:
+                remap:
+                  A: B
+          - stage:
+              entry1:
+                remap:
+                  B: C
         "},
         vec![Event::key_press(Key::KEY_A), Event::key_release(Key::KEY_A)],
         vec![
@@ -29,11 +33,14 @@ fn test_stage_output_is_remapped_by_next_stage() {
 fn test_entries_in_one_stage_dont_see_each_others_output() {
     assert_actions(
         indoc! {"
-        stages:
-          - - remap:
-                A: B
-            - remap:
-                B: C
+        pipeline:
+          - stage:
+              entry1:
+                remap:
+                  A: B
+              entry2:
+                remap:
+                  B: C
         "},
         vec![Event::key_press(Key::KEY_A), Event::key_release(Key::KEY_A)],
         vec![
@@ -47,9 +54,11 @@ fn test_entries_in_one_stage_dont_see_each_others_output() {
 fn test_stage_output_goes_to_keymap() {
     assert_actions(
         indoc! {"
-        stages:
-          - - remap:
-                A: B
+        pipeline:
+          - stage:
+              entry1:
+                remap:
+                  A: B
         keymap:
           - remap:
               B: C
@@ -68,15 +77,19 @@ fn test_stage_output_goes_to_keymap() {
 #[test]
 fn test_tick_reaches_later_stage() {
     let mut handler = EventHandlerForTest::new(indoc! {"
-        stages:
-          - - remap:
-                A: B
-          - - remap:
-                X:
-                  tap_hold_next_release:
-                    tap: X
-                    hold: LEFTSHIFT
-                    timeout: 10
+        pipeline:
+          - stage:
+              entry1:
+                remap:
+                  A: B
+          - stage:
+              entry1:
+                remap:
+                  X:
+                    tap_hold_next_release:
+                      tap: X
+                      hold: LEFTSHIFT
+                      timeout: 10
         "});
 
     handler.assert(vec![Event::key_press(Key::KEY_X)], vec![]);
@@ -94,15 +107,19 @@ fn test_mode_set_in_stage_applies_to_next_stage() {
     // The next stage must see them in the new mode.
     assert_actions(
         indoc! {"
-        stages:
-          - - remap:
-                X:
-                  tap_hold_next_release:
-                    tap: X
-                    hold: { set_mode: nav }
-          - - mode: nav
-              remap:
-                A: LEFT
+        pipeline:
+          - stage:
+              entry1:
+                remap:
+                  X:
+                    tap_hold_next_release:
+                      tap: X
+                      hold: { set_mode: nav }
+          - stage:
+              entry1:
+                mode: nav
+                remap:
+                  A: LEFT
         "},
         vec![
             Event::key_press(Key::KEY_X),
@@ -143,11 +160,13 @@ fn test_legacy_sections_become_experimental_then_modmap_stage() {
 }
 
 #[test]
-fn test_stages_cannot_be_combined_with_legacy_sections() {
+fn test_pipeline_cannot_be_combined_with_legacy_sections() {
     let mut config: Config = serde_yaml::from_str(indoc! {"
-        stages:
-          - - remap:
-                A: B
+        pipeline:
+          - stage:
+              entry1:
+                remap:
+                  A: B
         modmap:
           - remap:
               C: D
@@ -155,7 +174,7 @@ fn test_stages_cannot_be_combined_with_legacy_sections() {
     .unwrap();
 
     let err = resolve_stages(&mut config).unwrap_err().to_string();
-    assert_eq!(err, "`stages` can't be combined with `experimental_map` or `modmap`");
+    assert_eq!(err, "`pipeline` can't be combined with `experimental_map` or `modmap`");
 }
 
 #[test]
@@ -163,14 +182,16 @@ fn test_multipurpose_key_is_interrupted_by_another_multipurpose_key() {
     // The second multi-purpose key is a pressed key like any other, so it interrupts the first.
     assert_actions(
         indoc! {"
-        stages:
-          - - remap:
-                F:
-                  held: LEFTSHIFT
-                  alone: F
-                D:
-                  held: LEFTCTRL
-                  alone: D
+        pipeline:
+          - stage:
+              entry1:
+                remap:
+                  F:
+                    held: LEFTSHIFT
+                    alone: F
+                  D:
+                    held: LEFTCTRL
+                    alone: D
         "},
         vec![
             Event::key_press(Key::KEY_F),
@@ -195,14 +216,18 @@ fn test_multipurpose_key_is_interrupted_by_another_multipurpose_key() {
 fn test_press_release_key_in_stage() {
     assert_actions(
         indoc! {"
-        stages:
-          - - remap:
-                A:
-                  press: { set_mode: other }
-                  skip_key_event: true
-          - - mode: other
-              remap:
-                B: C
+        pipeline:
+          - stage:
+              entry1:
+                remap:
+                  A:
+                    press: { set_mode: other }
+                    skip_key_event: true
+          - stage:
+              entry1:
+                mode: other
+                remap:
+                  B: C
         "},
         vec![
             Event::key_press(Key::KEY_A),
@@ -211,4 +236,58 @@ fn test_press_release_key_in_stage() {
         ],
         vec![Action::KeyEvent(KeyEvent::new(Key::KEY_C, KeyValue::Press))],
     );
+}
+
+#[test]
+fn test_first_entry_in_stage_wins() {
+    // Entries keep their order in the file, even though they are a map.
+    assert_actions(
+        indoc! {"
+        pipeline:
+          - stage:
+              zzz:
+                remap:
+                  A: B
+              aaa:
+                remap:
+                  A: C
+        "},
+        vec![Event::key_press(Key::KEY_A), Event::key_release(Key::KEY_A)],
+        vec![
+            Action::KeyEvent(KeyEvent::new(Key::KEY_B, KeyValue::Press)),
+            Action::KeyEvent(KeyEvent::new(Key::KEY_B, KeyValue::Release)),
+        ],
+    );
+}
+
+#[test]
+fn test_entries_must_be_indented_under_stage() {
+    // Here `left` is a sibling of `stage`, not inside it.
+    let err = serde_yaml::from_str::<Config>(indoc! {"
+        pipeline:
+          - stage:
+            left:
+              remap:
+                A: B
+        "})
+    .unwrap_err()
+    .to_string();
+
+    assert!(err.contains("unknown field `left`"), "{err}");
+}
+
+#[test]
+fn test_entry_name_is_its_key() {
+    let mut config: Config = serde_yaml::from_str(indoc! {"
+        pipeline:
+          - stage:
+              left:
+                name: other
+                remap:
+                  A: B
+        "})
+    .unwrap();
+
+    let err = resolve_stages(&mut config).unwrap_err().to_string();
+    assert_eq!(err, "Stage entry `left` has a `name` field, but its name is its key");
 }

@@ -572,8 +572,8 @@ fn test_keymap_repeat() {
 pub fn parse_config_for_test(str: &str) -> Config {
     let mut config: Config = serde_yaml::from_str(str).unwrap();
     config.keymap_table = build_keymap_table(&config.keymap);
-    validate_config_file(&config).unwrap();
     resolve_stages(&mut config).unwrap();
+    validate_config_file(&config).unwrap();
     config
 }
 

@@ -1,33 +1,43 @@
 ## Stages
 
-`stages` is an ordered list of remapping stages, followed by an optional `keymap`.
-Each stage is a list of entries, and the output of one stage is the input of the next.
-The output of the last stage goes to `keymap`, if there is one, and then to the output device.
+`pipeline` is an ordered list of remapping stages, followed by an optional `keymap`.
+The output of one stage is the input of the next. The output of the last stage goes to
+`keymap`, if there is one, and then to the output device.
+
+Each stage is a map of named entries. The names are only for readability, but entries
+keep their order in the file, which matters when several match the same key.
 
 ```yaml
-stages:
+pipeline:
   # Stage 1: give both numpads the same logical keys
-  - - device: { only: left-pad }
-      remap:
-        KP1: A
+  - stage:
+      left_pad:
+        device: { only: left-pad }
+        remap:
+          KP1: A
   # Stage 2: home-row mods on the logical keys
-  - - remap:
-        A:
-          tap_hold_next_release: { tap: A, hold: LEFTSHIFT }
+  - stage:
+      homerow:
+        remap:
+          A:
+            tap_hold_next_release: { tap: A, hold: LEFTSHIFT }
 keymap:
   - remap:
       C-a: C-z
 ```
 
+The entries must be indented under `stage:`. At the same indentation as `stage:`, YAML
+reads them as siblings of `stage`, and the config is rejected with `unknown field`.
+
 ### Stage entries
 
-An entry has the same fields as an entry of the old `modmap` and `experimental_map` sections:
+An entry has the same fields as an entry of the old `modmap` and `experimental_map` sections,
+except `name`, which is the entry's key:
 
 | Field | Description |
 |---|---|
 | `remap` | Map from trigger key to operator |
 | `chords` | [Chords](reference_chords.md) |
-| `name` | Ignored, for readability |
 | `application`, `window` | Only apply in matching windows |
 | `device` | Only apply to keys from matching devices |
 | `mode` | Only apply in the given mode(s) |
@@ -57,9 +67,9 @@ Every operator can be used in any stage:
 ### The old sections
 
 `experimental_map` and `modmap` still work. They become two stages, `experimental_map` first and
-`modmap` second, which is the order they were always applied in. They can't be combined with `stages`.
+`modmap` second, which is the order they were always applied in. They can't be combined with `pipeline`.
 
-Configs split over several files: the stages of all files are concatenated, in file order.
+Configs split over several files: the pipelines of all files are concatenated, in file order.
 
 ### Behaviour changes compared to the old modmap
 

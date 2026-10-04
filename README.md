@@ -103,7 +103,7 @@ keymap:
 A configuration file has 3 parts: `modmap`, `keymap` and [Configuration options](doc/reference_config_options.md).
 `modmap` and `keymap` are described below.
 
-In this fork, `modmap` and `experimental_map` are unified into an ordered list of [stages](doc/reference_stages.md),
+In this fork, `modmap` and `experimental_map` are unified into a [pipeline](doc/reference_stages.md) of stages,
 each remapping the output of the one before.
 
 There are examples of [a more realistic config](example/config.yml) and [an emacs inspired config](example/emacs.yml).

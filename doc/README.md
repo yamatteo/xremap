@@ -19,7 +19,7 @@ Each method has pros and cons, it's worth checking out the pages before choosing
 ### Configuration file reference
 
 - [Configuration options](reference_config_options.md)
-- [Stages (ordered remapping pipeline)](reference_stages.md)
+- [Pipeline (ordered remapping stages)](reference_stages.md)
 - [Key names](reference_key_names.md)
 - [Actions](reference_actions.md)
 - [Key sequence](reference_key_sequence.md)

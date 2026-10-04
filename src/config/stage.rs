@@ -7,6 +7,28 @@ use evdev::KeyCode as Key;
 use indexmap::IndexMap;
 use serde::{Deserialize, Deserializer};
 
+// One step of `pipeline`. Entries are named by their key, and kept in file order.
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PipelineStep {
+    pub stage: IndexMap<String, StageEntry>,
+}
+
+impl PipelineStep {
+    pub fn into_entries(self) -> anyhow::Result<Vec<StageEntry>> {
+        self.stage
+            .into_iter()
+            .map(|(name, mut entry)| {
+                if !entry.name.is_empty() {
+                    anyhow::bail!("Stage entry `{name}` has a `name` field, but its name is its key");
+                }
+                entry.name = name;
+                Ok(entry)
+            })
+            .collect()
+    }
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct StageEntry {

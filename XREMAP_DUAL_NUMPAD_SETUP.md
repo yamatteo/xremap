@@ -40,7 +40,7 @@ Pre-built binaries are published for each desktop environment on GitHub.
    sudo apt install build-essential libx11-dev
    ```
 
-3. **Clone the repository and build** with the feature matching your desktop environment (GNOME shown here). The branch below carries the dual numpad example and the operator features it uses (layer-tap, and [`stages`](doc/reference_stages.md)):
+3. **Clone the repository and build** with the feature matching your desktop environment (GNOME shown here). The branch below carries the dual numpad example and the operator features it uses (layer-tap, and [`pipeline`](doc/reference_stages.md)):
    ```bash
    git clone -b feat/tap-hold-next-release https://github.com/yamatteo/xremap.git ~/xremap
    cd ~/xremap
@@ -138,7 +138,7 @@ The configuration and the systemd unit live in this repository, under
 | `xremap.service` | Runs xremap with the deployed copy of `config.yml`. |
 | `scenarios.txt` | Expected output of `config.yml` for a set of key sequences, checked by `cargo test`. |
 
-`config.yml` is a list of [stages](doc/reference_stages.md), each remapping the output of
+`config.yml` is a [pipeline](doc/reference_stages.md) of stages, each remapping the output of
 the one before, then a keymap:
 
 1. Layer-taps on the raw keycodes: A and O, held for numbers on the opposite pad.
@@ -201,7 +201,7 @@ Earlier versions of this setup ran the homerow tap-holds in a second instance,
 `xremap-layers.service`, reading `layers.yml`. Both are now part of `config.yml`. If you
 had it installed, remove it, since it would sit idle waiting for a device that no longer
 exists. Rebuild and reinstall the binary first (Option B in section 1): older builds reject
-the `stages` section that `config.yml` now uses.
+the `pipeline` section that `config.yml` now uses.
 
 ```bash
 systemctl --user disable --now xremap-layers.service
