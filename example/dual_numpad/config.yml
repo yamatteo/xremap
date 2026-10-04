@@ -49,6 +49,26 @@ pipeline:
 
   # --- 2. Translation. Entries are tried in order, and the first match wins.
   - stage:
+      # F keys on the left pad in numbers_left. The brackets are in the keymap below.
+      left_numbers:
+        device:
+          only:
+            - /dev/input/by-id/numpad-left-kbd
+        mode: [numbers_left]
+        remap:
+          KP0: F1
+          KP1: F2
+          KP4: F3
+          KP7: F4
+          SPACE: F5
+          KP2: F6
+          KP5: F7
+          KP8: F8
+          KPDOT: F9
+          KP3: F10
+          KP6: F11
+          KP9: F12
+
       left:
         device:
           only:
@@ -137,7 +157,8 @@ pipeline:
 
       # A left-pad move mode would be a "left_move" entry with mode: [move_left]
       # before "left". Until one exists, move_left behaves exactly like default.
-      # Left numbers mode is in the keymap below, since it needs Shift combos.
+      # Left numbers mode: F keys in "left_numbers" above, brackets in the keymap
+      # below, since they need Shift combos.
 
       right:
         device:

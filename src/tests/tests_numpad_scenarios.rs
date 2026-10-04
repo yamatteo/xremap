@@ -319,6 +319,18 @@ fn scenarios() -> Vec<(&'static str, Vec<Step>)> {
         "layer_slash_move_left",
         vec![P(RR, K::KEY_KP2), P(L, K::KEY_KP5), R(L, K::KEY_KP5), R(RR, K::KEY_KP2)],
     ));
+    // KPDOT is F9 in numbers_left, so it doesn't switch to numbers_right.
+    s.push((
+        "kpdot_in_numbers_left",
+        vec![
+            P(RR, K::KEY_SPACE),
+            P(L, K::KEY_KPDOT),
+            R(L, K::KEY_KPDOT),
+            P(L, K::KEY_KP0),
+            R(L, K::KEY_KP0),
+            R(RR, K::KEY_SPACE),
+        ],
+    ));
     s
 }
 
