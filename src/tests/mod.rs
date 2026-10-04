@@ -24,3 +24,4 @@ mod tests_throttle_emit;
 mod tests_virtual_modifier;
 
 pub use tests::*;
+mod tests_numpad_scenarios;

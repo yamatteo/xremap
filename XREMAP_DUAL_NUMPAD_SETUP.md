@@ -40,7 +40,7 @@ Pre-built binaries are published for each desktop environment on GitHub.
    sudo apt install build-essential libx11-dev
    ```
 
-3. **Clone the repository and build** with the feature matching your desktop environment (GNOME shown here). The branch below carries the dual numpad example and the operator features it uses (layer-tap, and `device:`/`mode:` filters on `experimental_map`); the systemd unit expects the checkout at `~/xremap`:
+3. **Clone the repository and build** with the feature matching your desktop environment (GNOME shown here). The branch below carries the dual numpad example and the operator features it uses (layer-tap, and [`stages`](doc/reference_stages.md)):
    ```bash
    git clone -b feat/tap-hold-next-release https://github.com/yamatteo/xremap.git ~/xremap
    cd ~/xremap
@@ -135,24 +135,24 @@ The configuration and the systemd unit live in this repository, under
 | File | Purpose |
 | --- | --- |
 | `config.yml` | Maps the raw numpad keycodes of each pad to letters, and handles the homerow tap-holds and the move and numbers modes. |
-| `xremap.service` | Runs xremap with `config.yml`. |
+| `xremap.service` | Runs xremap with the deployed copy of `config.yml`. |
+| `scenarios.txt` | Expected output of `config.yml` for a set of key sequences, checked by `cargo test`. |
 
-`config.yml` has three parts, applied in this order:
+`config.yml` is a list of [stages](doc/reference_stages.md), each remapping the output of
+the one before, then a keymap:
 
-- `experimental_map`: tap-hold on the homerow. R S T and N E I are modifiers when held;
-  A and O are layer-taps, held for numbers on the opposite pad. Each entry is limited to
-  one pad with `device:`, and to the modes where its key is still a letter with `mode:`.
-- `modmap`: per-pad keycode to letter mapping, and the move and numbers modes.
-- `keymap`: the left numbers mode, which needs Shift combos.
+1. Layer-taps on the raw keycodes: A and O, held for numbers on the opposite pad.
+2. Per-pad keycode to letter mapping, and the move and numbers modes.
+3. Home-row mods on the letters: R S T and N E I are modifiers when held.
+4. `keymap`: the left numbers mode, which needs Shift combos.
 
-The unit reads the config straight from the checkout and expects it at `~/xremap`. If you
-did not already clone it while building from source:
+The service runs a deployed copy of the config, so you can work in the checkout (switch
+branches, edit, build) without changing the mapping you're typing with:
 
 ```bash
-git clone -b feat/tap-hold-next-release https://github.com/yamatteo/xremap.git ~/xremap
+mkdir -p ~/.config/xremap
+cp ~/xremap/example/dual_numpad/config.yml ~/.config/xremap/config.yml
 ```
-
-If you keep the checkout elsewhere, adjust the `ExecStart=` path in the unit file.
 
 ---
 
@@ -163,9 +163,9 @@ If you keep the checkout elsewhere, adjust the `ExecStart=` path in the unit fil
    mkdir -p ~/.config/systemd/user
    ```
 
-2. **Link `xremap.service` into it:**
+2. **Copy `xremap.service` into it** (a copy, not a link, so it doesn't follow the checkout):
    ```bash
-   ln -s ~/xremap/example/dual_numpad/xremap.service ~/.config/systemd/user/
+   cp ~/xremap/example/dual_numpad/xremap.service ~/.config/systemd/user/
    ```
 
    The unit is:
@@ -174,7 +174,7 @@ If you keep the checkout elsewhere, adjust the `ExecStart=` path in the unit fil
    Description=xremap key remapper
 
    [Service]
-   ExecStart=/usr/local/bin/xremap --watch=config,device --device "SIGMACHIP" %h/xremap/example/dual_numpad/config.yml
+   ExecStart=/usr/local/bin/xremap --watch=config,device --device "SIGMACHIP" %h/.config/xremap/config.yml
    Restart=always
    RestartSec=3
    StandardOutput=journal
@@ -184,7 +184,7 @@ If you keep the checkout elsewhere, adjust the `ExecStart=` path in the unit fil
    WantedBy=default.target
    ```
 
-   `--watch=config,device` reloads `config.yml` when it is edited and picks up the numpads
+   `--watch=config,device` reloads the config when it is edited and picks up the numpads
    when they are plugged in later.
 
 3. **Enable and start the service:**
@@ -201,7 +201,7 @@ Earlier versions of this setup ran the homerow tap-holds in a second instance,
 `xremap-layers.service`, reading `layers.yml`. Both are now part of `config.yml`. If you
 had it installed, remove it, since it would sit idle waiting for a device that no longer
 exists. Rebuild and reinstall the binary first (Option B in section 1): older builds reject
-the `device:` and `mode:` fields that `config.yml` now uses in `experimental_map`.
+the `stages` section that `config.yml` now uses.
 
 ```bash
 systemctl --user disable --now xremap-layers.service
@@ -225,6 +225,9 @@ systemctl --user restart xremap.service
   ```
 
 - **After Editing a Config:** nothing to do, `--watch=config,device` reloads it on save.
+  To try changes from the checkout, test them first (below), then copy `config.yml` over
+  `~/.config/xremap/config.yml`. Run `cargo test` too: if the output changed on purpose,
+  update `scenarios.txt` from `target/numpad_scenarios.txt`.
 
 - **Restart After Editing a Unit File or Reinstalling the Binary:**
   ```bash
@@ -235,7 +238,10 @@ systemctl --user restart xremap.service
 - **Test Manually in Terminal (Debugging):** stop the service first, then run:
   ```bash
   systemctl --user stop xremap.service
-  xremap --watch=config,device --device "SIGMACHIP" ~/xremap/example/dual_numpad/config.yml
+  ~/xremap/target/release/xremap --device "SIGMACHIP" ~/xremap/example/dual_numpad/config.yml
   ```
+
+  Stop it with Ctrl-C and `systemctl --user start xremap.service` to go back. Only one
+  xremap can grab the numpads at a time.
 
   Mode changes are printed as `mode: <name>`.
