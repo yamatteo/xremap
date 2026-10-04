@@ -288,6 +288,37 @@ fn scenarios() -> Vec<(&'static str, Vec<Step>)> {
             R(L, K::KEY_KP1),
         ],
     ));
+    // Meta holds: X and DOT.
+    s.push(("hold_x_meta", vec![P(L, K::KEY_KP6), P(RR, K::KEY_KP9), R(RR, K::KEY_KP9), R(L, K::KEY_KP6)]));
+    s.push(("hold_dot_meta", vec![P(RR, K::KEY_KP5), P(L, K::KEY_KP7), R(L, K::KEY_KP7), R(RR, K::KEY_KP5)]));
+    // Move-mode layer-taps: Z (right pad arrows) and SLASH (left pad move mode, a no-op for now).
+    s.push((
+        "layer_z_move_right",
+        vec![
+            P(L, K::KEY_KP3),
+            P(RR, K::KEY_KPASTERISK),
+            R(RR, K::KEY_KPASTERISK),
+            P(RR, K::KEY_KP6),
+            R(RR, K::KEY_KP6),
+            R(L, K::KEY_KP3),
+            P(RR, K::KEY_KPASTERISK),
+            R(RR, K::KEY_KPASTERISK),
+        ],
+    ));
+    s.push((
+        "layer_z_timeout",
+        vec![
+            P(L, K::KEY_KP3),
+            Tick(250),
+            P(RR, K::KEY_KP8),
+            R(RR, K::KEY_KP8),
+            R(L, K::KEY_KP3),
+        ],
+    ));
+    s.push((
+        "layer_slash_move_left",
+        vec![P(RR, K::KEY_KP2), P(L, K::KEY_KP5), R(L, K::KEY_KP5), R(RR, K::KEY_KP2)],
+    ));
     s
 }
 
