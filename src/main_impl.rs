@@ -13,7 +13,7 @@ use crate::device::{
 use crate::event::Event;
 use crate::event_handler::EventHandler;
 use crate::main_controller::MainController;
-use crate::operator_handler::OperatorHandler;
+use crate::operator_handler::build_stages;
 use crate::plugin::{apply_plugin, Plugin};
 use crate::throttle_emit::ThrottleEmit;
 use crate::timeout_manager::TimeoutManager;
@@ -247,17 +247,12 @@ pub fn xremap_cli(mut plugin: impl Plugin) -> anyhow::Result<()> {
         // Default allow launch (Change to false in a major upgrade)
         let mut mainctrl = MainController::new(!no_window_logging, allow_launch.unwrap_or(true), desktop);
 
-        // OperatorHandler
-        let operator_handler = if config.experimental_map.len() > 0 {
-            Some(OperatorHandler::new(&config.experimental_map, timeout_manager.clone()))
-        } else {
-            None
-        };
+        let stages = build_stages(&config.stages, &timeout_manager);
 
         // EventHandler
         let timer = TimerFd::new(ClockId::CLOCK_MONOTONIC, TimerFlags::empty())?;
         let delay = Duration::from_millis(config.keypress_delay_ms);
-        let mut handler = EventHandler::new(timer, &config.default_mode, delay, operator_handler);
+        let mut handler = EventHandler::new(timer, &config.default_mode, delay, stages);
 
         let output_device = output_device(
             input_devices.values().next().map(InputDevice::bus_type),
@@ -310,7 +305,9 @@ pub fn xremap_cli(mut plugin: impl Plugin) -> anyhow::Result<()> {
                         if full {
                             continue 'main_loop;
                         } else {
-                            // The new config is only partially used.
+                            // The new config is only partially used. Stages are
+                            // rebuilt, so changes to them apply right away.
+                            handler.set_stages(build_stages(&config.stages, &timeout_manager));
                             println!("Config Reloaded");
                             continue 'event_loop;
                         }

@@ -44,7 +44,7 @@ pub struct OperatorHandler {
 /// handles the last part 'AB'. If operators were only static, then it would be more complicated
 /// because they would have to keep track of the whether 'b' should be squashed or let through.
 impl OperatorHandler {
-    pub fn new(experimental_map: &Vec<Expmap>, timeout_manager: Rc<TimeoutManager>) -> OperatorHandler {
+    pub fn new(experimental_map: &[Expmap], timeout_manager: Rc<TimeoutManager>) -> OperatorHandler {
         let mut lookup_map: HashMap<Key, Vec<OperatorEntry>> = HashMap::new();
 
         for expmap in experimental_map {
@@ -107,6 +107,15 @@ impl OperatorHandler {
             })
             .collect()
     }
+}
+
+/// Makes one handler per non-empty stage.
+pub fn build_stages(stages: &[Vec<Expmap>], timeout_manager: &Rc<TimeoutManager>) -> Vec<OperatorHandler> {
+    stages
+        .iter()
+        .filter(|stage| !stage.is_empty())
+        .map(|stage| OperatorHandler::new(stage, timeout_manager.clone()))
+        .collect()
 }
 
 /// Makes the static operators, that is needed for the given configuration file definition.

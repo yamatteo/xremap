@@ -51,8 +51,8 @@ pub struct EventHandler {
     keypress_delay: Duration,
     // Buffered actions to be dispatched. TODO: Just return actions from each function instead of using this.
     actions: Vec<Action>,
-    // Handler to perform some of the remapping
-    operator_handler: Option<OperatorHandler>,
+    // Event stages, applied in order before modmap and keymap.
+    stages: Vec<OperatorHandler>,
 }
 
 struct TaggedActions {
@@ -75,7 +75,7 @@ impl EventHandler {
         override_timer: TimerFd,
         mode: &str,
         keypress_delay: Duration,
-        operator_handler: Option<OperatorHandler>,
+        stages: Vec<OperatorHandler>,
     ) -> EventHandler {
         EventHandler {
             modifiers: vec![],
@@ -89,22 +89,55 @@ impl EventHandler {
             escape_next_key: false,
             keypress_delay,
             actions: vec![],
-            operator_handler,
+            stages,
         }
+    }
+
+    // Replace the event stages, e.g. after the config is reloaded.
+    // Operators that are active in the old stages are dropped.
+    pub fn set_stages(&mut self, stages: Vec<OperatorHandler>) {
+        self.stages = stages;
+    }
+
+    // Pass an event through the stages from `index` onwards, depth-first: each
+    // event an operator emits goes through all later stages, and then modmap and
+    // keymap, before the next one. Mode changes take effect as soon as a stage emits them.
+    fn run_stages(
+        &mut self,
+        index: usize,
+        event: Event,
+        config: &Config,
+        wmclient: &mut WMClient,
+        mouse_movement_collection: &mut Vec<RelativeEvent>,
+    ) -> Result<(), Box<dyn Error>> {
+        if index == self.stages.len() {
+            return self.on_staged_event(event, config, wmclient, mouse_movement_collection);
+        }
+
+        // Ticks never leave a stage, so every stage must be given its own.
+        let is_tick = matches!(event, Event::Tick);
+        let emitted = self.stages[index].map_events(vec![event], &self.mode, &config.default_mode, wmclient);
+
+        for event in emitted {
+            if let Event::SetMode(mode) = &event {
+                self.mode = mode.clone().unwrap_or_else(|| config.default_mode.clone());
+            }
+            self.run_stages(index + 1, event, config, wmclient, mouse_movement_collection)?;
+        }
+
+        if is_tick {
+            self.run_stages(index + 1, Event::Tick, config, wmclient, mouse_movement_collection)?;
+        }
+        Ok(())
     }
 
     // Handle an Event and return Actions. This should be the only public method of EventHandler.
     pub fn on_events(
         &mut self,
-        mut events: Vec<Event>,
+        events: Vec<Event>,
         config: &Config,
         wmclient: &mut WMClient,
     ) -> Result<Vec<Action>, Box<dyn Error>> {
-        if let Some(handler) = &mut self.operator_handler {
-            wmclient.clear_app_class_and_title();
-            events = handler.map_events(events, &self.mode, &config.default_mode, wmclient);
-        };
-
         debug_assert!(self.actions.is_empty());
         // a vector to collect mouse movement events to be able to send them all at once as one MouseMovementEventCollection.
         let mut mouse_movement_collection: Vec<RelativeEvent> = Vec::new();
@@ -115,50 +148,68 @@ impl EventHandler {
                 debug!("=> {}: {:?}", key_event.value(), &key_event.key);
             }
 
-            // Apply modmap
-            let modmap_events = self.apply_modmap(config, event, wmclient)?;
-
-            // Apply keymap
-            for event in modmap_events.into_iter() {
-                match event {
-                    Event::KeyEvent(device, key_event) => {
-                        self.on_key_event(key_event.key, key_event.value(), &device, config, wmclient)?;
-                    }
-                    Event::RelativeEvent(device, relative_event) => {
-                        let key = relative_event.to_disguised_key();
-
-                        // Send as disguised-event
-                        let was_remapped = self.on_key_event(key, PRESS, &device, config, wmclient)?;
-
-                        if !was_remapped {
-                            if relative_event.code <= 2 {
-                                // The relative event keycodes 1 and 2 is REL_X and REL_Y. Meaning mouse move.
-                                mouse_movement_collection.push(relative_event);
-                            } else {
-                                self.send_action(Action::RelativeEvent(relative_event));
-                            }
-                        }
-                    }
-
-                    Event::OtherEvents(event) => self.send_action(Action::InputEvent(event)),
-                    Event::OverrideTimeout => self.timeout_override()?,
-                    Event::Tick => {
-                        // Can be ignored. It's for operators.
-                    }
-                    Event::SetMode(mode) => {
-                        let mode = mode.unwrap_or_else(|| config.default_mode.clone());
-                        println!("mode: {mode}");
-                        self.mode = mode;
-                    }
-                    Event::ByPassLocal(_) => unreachable!(),
+            match event {
+                // The nested-remap timer belongs to keymap, so it skips the stages.
+                Event::OverrideTimeout => {
+                    self.on_staged_event(event, config, wmclient, &mut mouse_movement_collection)?
                 }
+                event => self.run_stages(0, event, config, wmclient, &mut mouse_movement_collection)?,
             }
         }
-        // if there is at least one mouse movement event, sending all of them as one MouseMovementEventCollection
+        // if there is at least one mouse movement event, sending all of them as one MouseMovementEventCollection.
         if !mouse_movement_collection.is_empty() {
             self.send_action(Action::MouseMovementEventCollection(mouse_movement_collection));
         }
         Ok(self.actions.drain(..).collect())
+    }
+
+    // Apply modmap and keymap to an event that has gone through all stages.
+    fn on_staged_event(
+        &mut self,
+        event: Event,
+        config: &Config,
+        wmclient: &mut WMClient,
+        mouse_movement_collection: &mut Vec<RelativeEvent>,
+    ) -> Result<(), Box<dyn Error>> {
+        // Apply modmap
+        let modmap_events = self.apply_modmap(config, event, wmclient)?;
+
+        // Apply keymap
+        for event in modmap_events.into_iter() {
+            match event {
+                Event::KeyEvent(device, key_event) => {
+                    self.on_key_event(key_event.key, key_event.value(), &device, config, wmclient)?;
+                }
+                Event::RelativeEvent(device, relative_event) => {
+                    let key = relative_event.to_disguised_key();
+
+                    // Send as disguised-event
+                    let was_remapped = self.on_key_event(key, PRESS, &device, config, wmclient)?;
+
+                    if !was_remapped {
+                        if relative_event.code <= 2 {
+                            // The relative event keycodes 1 and 2 is REL_X and REL_Y. Meaning mouse move.
+                            mouse_movement_collection.push(relative_event);
+                        } else {
+                            self.send_action(Action::RelativeEvent(relative_event));
+                        }
+                    }
+                }
+
+                Event::OtherEvents(event) => self.send_action(Action::InputEvent(event)),
+                Event::OverrideTimeout => self.timeout_override()?,
+                Event::Tick => {
+                    // Can be ignored. It's for operators.
+                }
+                Event::SetMode(mode) => {
+                    let mode = mode.unwrap_or_else(|| config.default_mode.clone());
+                    println!("mode: {mode}");
+                    self.mode = mode;
+                }
+                Event::ByPassLocal(_) => unreachable!(),
+            }
+        }
+        Ok(())
     }
 
     // Handle EventType::KEY

@@ -33,6 +33,10 @@ use std::{error, fs};
 #[serde(deny_unknown_fields)]
 pub struct Config {
     // Config interface
+    // Event stages, applied in order. Each stage is a list of entries.
+    #[serde(default = "Vec::new")]
+    pub stages: Vec<Vec<Expmap>>,
+    // Legacy section, moved into `stages` by `resolve_stages`.
     #[serde(default = "Vec::new")]
     pub experimental_map: Vec<Expmap>,
     #[serde(default = "Vec::new")]
@@ -101,6 +105,8 @@ pub fn load_configs(filenames: &[PathBuf]) -> Result<Config, Box<dyn error::Erro
             ConfigFiletype::Toml => toml::from_str(&config_contents)?,
         };
 
+        config.stages.extend(c.stages);
+        config.experimental_map.extend(c.experimental_map);
         config.modmap.extend(c.modmap);
         config.keymap.extend(c.keymap);
         config.virtual_modifiers.extend(c.virtual_modifiers);
@@ -110,8 +116,21 @@ pub fn load_configs(filenames: &[PathBuf]) -> Result<Config, Box<dyn error::Erro
     config.keymap_table = build_keymap_table(&config.keymap);
 
     validate_config_file(&config)?;
+    resolve_stages(&mut config)?;
 
     Ok(config)
+}
+
+// Moves the legacy sections into `stages`, so the rest of xremap only has to know about stages.
+pub fn resolve_stages(config: &mut Config) -> anyhow::Result<()> {
+    if config.experimental_map.is_empty() {
+        return Ok(());
+    }
+    if !config.stages.is_empty() {
+        anyhow::bail!("`stages` can't be combined with `experimental_map`");
+    }
+    config.stages.push(std::mem::take(&mut config.experimental_map));
+    Ok(())
 }
 
 fn default_mode() -> String {

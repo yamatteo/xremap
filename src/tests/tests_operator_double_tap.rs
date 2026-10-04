@@ -19,7 +19,7 @@ fn get_handler() -> OperatorHandler {
                     timeout: 10
         "});
 
-    OperatorHandler::new(&config.experimental_map, Rc::new(TimeoutManager::new()))
+    OperatorHandler::new(&config.stages[0], Rc::new(TimeoutManager::new()))
 }
 
 #[test]

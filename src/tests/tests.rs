@@ -3,11 +3,11 @@ use crate::client::WindowInfo;
 use crate::client::{Client, WMClient};
 use crate::config::keymap::build_keymap_table;
 use crate::config::validation::validate_config_file;
-use crate::config::Config;
+use crate::config::{resolve_stages, Config};
 use crate::device::InputDeviceInfo;
 use crate::event::{Event, KeyEvent, KeyValue, RelativeEvent};
 use crate::event_handler::EventHandler;
-use crate::operator_handler::OperatorHandler;
+use crate::operator_handler::{build_stages, OperatorHandler};
 use crate::timeout_manager::TimeoutManager;
 use evdev::{KeyCode as Key, RelativeAxisCode};
 use indoc::indoc;
@@ -573,12 +573,15 @@ pub fn parse_config_for_test(str: &str) -> Config {
     let mut config: Config = serde_yaml::from_str(str).unwrap();
     config.keymap_table = build_keymap_table(&config.keymap);
     validate_config_file(&config).unwrap();
+    resolve_stages(&mut config).unwrap();
     config
 }
 
+// A handler for the first stage of the config.
 pub fn get_handler_from_config(config: &str) -> anyhow::Result<OperatorHandler> {
     let config = parse_config_for_test(config);
-    Ok(OperatorHandler::new(&config.experimental_map, Rc::new(TimeoutManager::new())))
+    let stage = config.stages.first().map(|stage| stage.as_slice()).unwrap_or_default();
+    Ok(OperatorHandler::new(stage, Rc::new(TimeoutManager::new())))
 }
 
 pub fn assert_events(actual: impl AsRef<Vec<Event>>, expected: impl AsRef<Vec<Event>>) {
@@ -615,12 +618,8 @@ impl EventHandlerForTest {
     pub fn new_with_current_application(config_yaml: &str, current_application: Option<String>) -> Self {
         let timer = TimerFd::new(ClockId::CLOCK_MONOTONIC, TimerFlags::empty()).unwrap();
         let config = parse_config_for_test(config_yaml);
-        let operator_handler = if !config.experimental_map.is_empty() {
-            Some(OperatorHandler::new(&config.experimental_map, Rc::new(TimeoutManager::new())))
-        } else {
-            None
-        };
-        let event_handler = EventHandler::new(timer, &config.default_mode, Duration::from_micros(0), operator_handler);
+        let stages = build_stages(&config.stages, &Rc::new(TimeoutManager::new()));
+        let event_handler = EventHandler::new(timer, &config.default_mode, Duration::from_micros(0), stages);
 
         Self {
             event_handler,
