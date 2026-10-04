@@ -109,11 +109,7 @@ pipeline:
           KPPLUS: LEFTMETA
           KPMINUS: LEFTALT
           BACKSPACE: SPACE
-          # Hold to put the right pad in move mode.
-          CALC:
-            skip_key_event: true
-            press: { set_mode: move_right }
-            release: { set_mode: default }
+          CALC: SPACE
 
       # Keys not listed fall through to the "right" entry below (first match wins).
       right_move:
@@ -190,11 +186,7 @@ pipeline:
           KP2: SLASH
           SPACE: RIGHTSHIFT
 
-          # Hold to put the left pad in move mode.
-          HOMEPAGE:
-            skip_key_event: true
-            press: { set_mode: move_left }
-            release: { set_mode: default }
+          HOMEPAGE: SPACE
           NUMLOCK: SPACE
           KP7: RIGHTALT
           KP4: RIGHTMETA

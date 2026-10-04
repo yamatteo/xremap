@@ -96,9 +96,15 @@ fn scenarios() -> Vec<(&'static str, Vec<Step>)> {
         K::KEY_KP0,
     ];
     s.push(("taps_left", left.iter().flat_map(|k| tap(L, *k)).collect()));
-    s.push(("taps_left_consumer", vec![tap(LC, K::KEY_HOMEPAGE), tap(LC, K::KEY_MAIL)].concat()));
+    s.push((
+        "taps_left_consumer",
+        vec![tap(LC, K::KEY_HOMEPAGE), tap(LC, K::KEY_MAIL), tap(LC, K::KEY_CALC)].concat(),
+    ));
     s.push(("taps_right", right.iter().flat_map(|k| tap(RR, *k)).collect()));
-    s.push(("taps_right_consumer", vec![tap(RC, K::KEY_CALC), tap(RC, K::KEY_MAIL)].concat()));
+    s.push((
+        "taps_right_consumer",
+        vec![tap(RC, K::KEY_CALC), tap(RC, K::KEY_MAIL), tap(RC, K::KEY_HOMEPAGE)].concat(),
+    ));
 
     // Home-row mods: hold + other key, released inside (hold).
     for (name, hk) in [
@@ -217,8 +223,8 @@ fn scenarios() -> Vec<(&'static str, Vec<Step>)> {
         v.extend(tap(RR, K::KEY_KP9));
         v
     }));
-    s.push(("calc_move_right", {
-        let mut v = vec![P(LC, K::KEY_CALC)];
+    s.push(("z_move_right", {
+        let mut v = vec![P(L, K::KEY_KP3)];
         v.extend(right.iter().flat_map(|k| tap(RR, *k)));
         v.extend(vec![
             P(RR, K::KEY_KPASTERISK),
@@ -226,7 +232,7 @@ fn scenarios() -> Vec<(&'static str, Vec<Step>)> {
             Rep(RR, K::KEY_KPASTERISK),
             R(RR, K::KEY_KPASTERISK),
         ]);
-        v.push(R(LC, K::KEY_CALC));
+        v.push(R(L, K::KEY_KP3));
         v.extend(tap(RR, K::KEY_KPASTERISK));
         v
     }));
@@ -236,22 +242,22 @@ fn scenarios() -> Vec<(&'static str, Vec<Step>)> {
         v.push(R(RR, K::KEY_SPACE));
         v
     }));
-    s.push(("homepage_move_left", {
-        let mut v = vec![P(RC, K::KEY_HOMEPAGE)];
+    s.push(("slash_move_left", {
+        let mut v = vec![P(RR, K::KEY_KP2)];
         v.extend(left.iter().flat_map(|k| tap(L, *k)));
-        v.push(R(RC, K::KEY_HOMEPAGE));
+        v.push(R(RR, K::KEY_KP2));
         v
     }));
-    // Shift via home-row while in move mode: hold S, CALC, N (arrow).
+    // Shift via home-row while in move mode: hold Z, S, N (arrow).
     s.push((
         "shift_arrow",
         vec![
-            P(LC, K::KEY_CALC),
+            P(L, K::KEY_KP3),
             P(L, K::KEY_KP8),
             P(RR, K::KEY_KPASTERISK),
             R(RR, K::KEY_KPASTERISK),
             R(L, K::KEY_KP8),
-            R(LC, K::KEY_CALC),
+            R(L, K::KEY_KP3),
         ],
     ));
     // Ctrl-a style chord: T held + A tap.
@@ -272,10 +278,11 @@ fn scenarios() -> Vec<(&'static str, Vec<Step>)> {
             P(L, K::KEY_KPDOT),
             R(RR, K::KEY_KP9),
             R(L, K::KEY_KPDOT),
-            P(RR, K::KEY_KPASTERISK),
-            P(LC, K::KEY_CALC),
-            R(RR, K::KEY_KPASTERISK),
-            R(LC, K::KEY_CALC),
+            P(RR, K::KEY_KP8),
+            P(L, K::KEY_KP3),
+            Tick(250),
+            R(RR, K::KEY_KP8),
+            R(L, K::KEY_KP3),
         ],
     ));
     // Repeat of plain keys.

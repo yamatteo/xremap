@@ -42,6 +42,8 @@
   KEY_HOMEPAGE, value: Release -> KEY_G:Release 
   KEY_MAIL, value: Press       -> KEY_B:Press 
   KEY_MAIL, value: Release     -> KEY_B:Release 
+  KEY_CALC, value: Press       -> KEY_SPACE:Press 
+  KEY_CALC, value: Release     -> KEY_SPACE:Release 
 == taps_right
   KEY_BACKSPACE, value: Press  -> KEY_L:Press 
   KEY_BACKSPACE, value: Release -> KEY_L:Release 
@@ -86,6 +88,8 @@
   KEY_CALC, value: Release     -> KEY_J:Release 
   KEY_MAIL, value: Press       -> KEY_H:Press 
   KEY_MAIL, value: Release     -> KEY_H:Release 
+  KEY_HOMEPAGE, value: Press   -> KEY_SPACE:Press 
+  KEY_HOMEPAGE, value: Release -> KEY_SPACE:Release 
 == hold_r
   KEY_KP5, value: Press        -> 
   KEY_KP2, value: Press        -> 
@@ -273,10 +277,10 @@
   KEY_KPDOT, value: Release    -> KEY_LEFTSHIFT:Release 
   KEY_KP9, value: Press        -> 
   KEY_KP9, value: Release      -> KEY_E:Press KEY_E:Release 
-== calc_move_right
-  KEY_CALC, value: Press       -> 
-  KEY_BACKSPACE, value: Press  -> KEY_HOME:Press 
-  KEY_BACKSPACE, value: Release -> KEY_HOME:Release 
+== z_move_right
+  KEY_KP3, value: Press        -> 
+  KEY_BACKSPACE, value: Press  -> 
+  KEY_BACKSPACE, value: Release -> KEY_HOME:Press KEY_HOME:Release 
   KEY_KPMINUS, value: Press    -> KEY_UP:Press 
   KEY_KPMINUS, value: Release  -> KEY_UP:Release 
   KEY_KPPLUS, value: Press     -> KEY_PAGEUP:Press 
@@ -317,7 +321,7 @@
   KEY_KPASTERISK, value: Repeat -> KEY_LEFT:Repeat 
   KEY_KPASTERISK, value: Repeat -> KEY_LEFT:Repeat 
   KEY_KPASTERISK, value: Release -> KEY_LEFT:Release 
-  KEY_CALC, value: Release     -> 
+  KEY_KP3, value: Release      -> 
   KEY_KPASTERISK, value: Press -> 
   KEY_KPASTERISK, value: Release -> KEY_N:Press KEY_N:Release 
 == space_shift_left
@@ -361,10 +365,10 @@
   KEY_BACKSPACE, value: Press  -> KEY_SPACE:Press 
   KEY_BACKSPACE, value: Release -> KEY_SPACE:Release 
   KEY_SPACE, value: Release    -> KEY_RIGHTSHIFT:Release 
-== homepage_move_left
-  KEY_HOMEPAGE, value: Press   -> 
-  KEY_KP0, value: Press        -> KEY_ESC:Press 
-  KEY_KP0, value: Release      -> KEY_ESC:Release 
+== slash_move_left
+  KEY_KP2, value: Press        -> 
+  KEY_KP0, value: Press        -> 
+  KEY_KP0, value: Release      -> KEY_ESC:Press KEY_ESC:Release 
   KEY_KP1, value: Press        -> KEY_Q:Press 
   KEY_KP1, value: Release      -> KEY_Q:Release 
   KEY_KP4, value: Press        -> KEY_W:Press 
@@ -401,14 +405,14 @@
   KEY_KPMINUS, value: Release  -> KEY_LEFTALT:Release 
   KEY_BACKSPACE, value: Press  -> KEY_SPACE:Press 
   KEY_BACKSPACE, value: Release -> KEY_SPACE:Release 
-  KEY_HOMEPAGE, value: Release -> 
+  KEY_KP2, value: Release      -> 
 == shift_arrow
-  KEY_CALC, value: Press       -> 
+  KEY_KP3, value: Press        -> 
   KEY_KP8, value: Press        -> 
   KEY_KPASTERISK, value: Press -> 
   KEY_KPASTERISK, value: Release -> KEY_LEFTSHIFT:Press KEY_LEFT:Press KEY_LEFT:Release 
   KEY_KP8, value: Release      -> KEY_LEFTSHIFT:Release 
-  KEY_CALC, value: Release     -> 
+  KEY_KP3, value: Release      -> 
 == ctrl_a
   KEY_KPSLASH, value: Press    -> 
   KEY_KP2, value: Press        -> 
@@ -419,10 +423,11 @@
   KEY_KPDOT, value: Press      -> 
   KEY_KP9, value: Release      -> KEY_E:Press KEY_E:Release KEY_LEFTSHIFT:Press 
   KEY_KPDOT, value: Release    -> KEY_LEFTSHIFT:Release 
-  KEY_KPASTERISK, value: Press -> 
-  KEY_CALC, value: Press       -> 
-  KEY_KPASTERISK, value: Release -> KEY_N:Press KEY_N:Release 
-  KEY_CALC, value: Release     -> 
+  KEY_KP8, value: Press        -> KEY_COMMA:Press 
+  KEY_KP3, value: Press        -> 
+  Tick                         -> 
+  KEY_KP8, value: Release      -> KEY_COMMA:Release 
+  KEY_KP3, value: Release      -> 
 == repeat_plain
   KEY_KP1, value: Press        -> KEY_Q:Press 
   KEY_KP1, value: Repeat       -> KEY_Q:Repeat 
