@@ -89,11 +89,7 @@ pipeline:
           KPSLASH: T
           TAB: D
 
-          # Hold to put the right pad in numbers mode.
-          KPDOT:
-            skip_key_event: true
-            press: { set_mode: numbers_right }
-            release: { set_mode: default }
+          KPDOT: LEFTSHIFT
           KP3: Z
           KP6: X
           KP9: C
@@ -103,7 +99,7 @@ pipeline:
           #######: EMPTY
           KPENTER: LEFTCTRL
           KPPLUS: LEFTMETA
-          KPMINUS: F14
+          KPMINUS: LEFTALT
           BACKSPACE: SPACE
           # Hold to put the right pad in move mode.
           CALC:
@@ -185,11 +181,7 @@ pipeline:
           KP8: COMMA
           KP5: DOT
           KP2: SLASH
-          # Hold to put the left pad in numbers mode.
-          SPACE:
-            skip_key_event: true
-            press: { set_mode: numbers_left }
-            release: { set_mode: default }
+          SPACE: RIGHTSHIFT
 
           # Hold to put the left pad in move mode (no-op for now).
           HOMEPAGE:
@@ -197,9 +189,9 @@ pipeline:
             press: { set_mode: move_left }
             release: { set_mode: default }
           NUMLOCK: SPACE
-          KP7: F14
+          KP7: RIGHTALT
           KP4: RIGHTMETA
-          KP1: F22
+          KP1: RIGHTCTRL
           KP0: ESC
 
   # --- 3. Home-row mods

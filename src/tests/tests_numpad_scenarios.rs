@@ -210,7 +210,7 @@ fn scenarios() -> Vec<(&'static str, Vec<Step>)> {
     ));
 
     // Press/release mode keys.
-    s.push(("kpdot_numbers_right", {
+    s.push(("kpdot_shift_right", {
         let mut v = vec![P(L, K::KEY_KPDOT)];
         v.extend(right.iter().flat_map(|k| tap(RR, *k)));
         v.push(R(L, K::KEY_KPDOT));
@@ -230,7 +230,7 @@ fn scenarios() -> Vec<(&'static str, Vec<Step>)> {
         v.extend(tap(RR, K::KEY_KPASTERISK));
         v
     }));
-    s.push(("space_numbers_left", {
+    s.push(("space_shift_left", {
         let mut v = vec![P(RR, K::KEY_SPACE)];
         v.extend(left.iter().flat_map(|k| tap(L, *k)));
         v.push(R(RR, K::KEY_SPACE));
@@ -319,16 +319,24 @@ fn scenarios() -> Vec<(&'static str, Vec<Step>)> {
         "layer_slash_move_left",
         vec![P(RR, K::KEY_KP2), P(L, K::KEY_KP5), R(L, K::KEY_KP5), R(RR, K::KEY_KP2)],
     ));
-    // KPDOT is F9 in numbers_left, so it doesn't switch to numbers_right.
+    s.push(("layer_o_all_left", {
+        let mut v = vec![P(RR, K::KEY_KP3), P(L, K::KEY_KP7), R(L, K::KEY_KP7)];
+        v.extend(left.iter().flat_map(|k| tap(L, *k)));
+        v.extend(tap(LC, K::KEY_HOMEPAGE));
+        v.extend(tap(LC, K::KEY_MAIL));
+        v.push(R(RR, K::KEY_KP3));
+        v
+    }));
+    // KPDOT is F9 in numbers_left, even though it's LEFTSHIFT in the other modes.
     s.push((
         "kpdot_in_numbers_left",
         vec![
-            P(RR, K::KEY_SPACE),
+            P(RR, K::KEY_KP3),
             P(L, K::KEY_KPDOT),
             R(L, K::KEY_KPDOT),
             P(L, K::KEY_KP0),
             R(L, K::KEY_KP0),
-            R(RR, K::KEY_SPACE),
+            R(RR, K::KEY_KP3),
         ],
     ));
     s
