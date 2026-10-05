@@ -5,7 +5,7 @@ use crate::event::{Event, KeyEvent};
 use crate::operators::{ActiveOperator, OperatorAction, StaticOperator};
 use crate::timeout_manager::TimeoutManager;
 use evdev::KeyCode as Key;
-use log::error;
+use log::{debug, error};
 use std::collections::HashSet;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
@@ -16,6 +16,7 @@ pub struct TapHoldNextReleaseOperator {
     hold: TapHoldAction,
     timeout: Duration,
     timeout_button: Option<Vec<Key>>,
+    next_release: bool,
     timeout_manager: Rc<TimeoutManager>,
 }
 
@@ -32,6 +33,7 @@ impl TapHoldNextReleaseOperator {
                 hold: config.hold.clone(),
                 timeout: config.timeout,
                 timeout_button: config.timeout_button.clone(),
+                next_release: config.next_release,
                 timeout_manager,
             }),
         )]
@@ -52,9 +54,11 @@ impl StaticOperator for TapHoldNextReleaseOperator {
                 hold: self.hold.clone(),
                 timeout: self.timeout,
                 timeout_button: self.timeout_button.clone(),
+                next_release: self.next_release,
                 start_inst: Instant::now(),
                 buffered: vec![],
                 pressed_after: HashSet::new(),
+                tap_release_at: 0,
                 state: State::New,
                 active_hold_keys: vec![],
                 mode_set: false,
@@ -80,9 +84,12 @@ pub struct ActiveTapHoldNextReleaseOperator {
     hold: TapHoldAction,
     timeout: Duration,
     timeout_button: Option<Vec<Key>>,
+    next_release: bool,
     start_inst: Instant,
     buffered: Vec<Event>,
     pressed_after: HashSet<Key>,
+    // Where in `buffered` a tap is released: after the releases of keys pressed before it.
+    tap_release_at: usize,
     state: State,
     active_hold_keys: Vec<Key>,
     // The hold set a mode, which must be reset on release.
@@ -96,6 +103,12 @@ impl ActiveTapHoldNextReleaseOperator {
     }
 
     fn start_hold(&mut self, device: Rc<InputDeviceInfo>, timed_out: bool) -> Vec<Emit> {
+        debug!(
+            "tap-hold {:?}: hold after {:?}, by {}",
+            self.key,
+            self.start_inst.elapsed(),
+            if timed_out { "timeout" } else { "next release" }
+        );
         self.state = State::Held;
         let hold = match (&self.timeout_button, timed_out) {
             (Some(keys), true) => TapHoldAction::Keys(keys.clone()),
@@ -164,17 +177,23 @@ impl ActiveOperator for ActiveTapHoldNextReleaseOperator {
             State::Undecided => {
                 if self.is_trigger(&device, key_event) {
                     // Trigger key released before any post-pressed key release -> TAP!
+                    // The tap is released after the buffered releases of keys pressed before
+                    // the trigger. Otherwise, to later stages, such a key would seem held
+                    // across the whole tap, e.g. a roll from a home-row mod into a layer-tap
+                    // would be a hold of the mod.
+                    debug!("tap-hold {:?}: tap after {:?}", self.key, self.start_inst.elapsed());
                     self.state = State::Done;
-                    let mut emit = vec![];
-                    for key in &self.tap {
-                        emit.push(Emit::key_press(device.clone(), *key));
-                    }
-                    for key in self.tap.iter().rev() {
-                        emit.push(Emit::key_release(device.clone(), *key));
-                    }
-                    let unhandled = std::mem::take(&mut self.buffered);
+                    let emit = self.tap.iter().map(|k| Emit::key_press(device.clone(), *k)).collect();
+                    let mut unhandled = std::mem::take(&mut self.buffered);
+                    let split = self.tap_release_at;
+                    let releases = self
+                        .tap
+                        .iter()
+                        .rev()
+                        .map(|k| Event::ByPassLocal(Box::new(Event::key_release2(device.clone(), *k))));
+                    unhandled.splice(split..split, releases);
                     OperatorAction::Done(emit, unhandled)
-                } else if self.pressed_after.contains(&key_event.key) {
+                } else if self.next_release && self.pressed_after.contains(&key_event.key) {
                     // A key pressed AFTER the trigger was released while trigger is held -> HOLD!
                     let emit = self.start_hold(self.device.clone(), false);
 
@@ -182,10 +201,14 @@ impl ActiveOperator for ActiveTapHoldNextReleaseOperator {
                     let unhandled = std::mem::take(&mut self.buffered);
                     OperatorAction::Partial(emit, unhandled)
                 } else {
-                    // Key was pressed BEFORE the trigger key was pressed.
+                    // Key was pressed BEFORE the trigger key was pressed, or this is tap_hold.
                     // As per KMonad: "because 'a' was already pressed when we started, so foo decides it is tapping"
                     // Buffering this release event, still undecided.
+                    let pressed_before = !self.pressed_after.contains(&key_event.key);
                     self.buffered.push(Event::KeyEvent(device, key_event.clone()));
+                    if pressed_before {
+                        self.tap_release_at = self.buffered.len();
+                    }
                     OperatorAction::Undecided
                 }
             }

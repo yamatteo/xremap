@@ -82,6 +82,11 @@ impl OperatorHandler {
         self.map_events(events, "default", "default", &mut wmclient)
     }
 
+    /// Undecided operators hold back events, which later stages haven't seen yet.
+    pub fn is_buffering(&self) -> bool {
+        self.candidates.is_some()
+    }
+
     /// `mode` is the mode EventHandler is in. Operators can change it while the events
     /// are processed, which is tracked here, so replayed events see the new mode.
     pub fn map_events(
@@ -133,7 +138,7 @@ fn get_static_operators(
             .iter()
             .flat_map(|operator| get_static_operators(key, operator, &timeout_manager))
             .collect(),
-        StageOperator::TapHoldNextRelease(tap_hold) => {
+        StageOperator::TapHold(tap_hold) | StageOperator::TapHoldNextRelease(tap_hold) => {
             TapHoldNextReleaseOperator::get_ops(key, tap_hold, timeout_manager.clone())
         }
         StageOperator::Keys(keys) => KeysOperator::get_ops(key, keys),

@@ -133,6 +133,51 @@ fn scenarios() -> Vec<(&'static str, Vec<Step>)> {
             R(RR, K::KEY_KPASTERISK),
         ],
     ));
+    // Rolls from a home-row mod into a layer-tap (tap): the mod key is released
+    // while the layer-tap is still undecided.
+    s.push(("roll_r_a", vec![P(L, K::KEY_KP5), P(L, K::KEY_KP2), R(L, K::KEY_KP5), R(L, K::KEY_KP2)]));
+    s.push((
+        "roll_i_o",
+        vec![
+            P(RR, K::KEY_KP6),
+            P(RR, K::KEY_KP3),
+            R(RR, K::KEY_KP6),
+            R(RR, K::KEY_KP3),
+        ],
+    ));
+    s.push((
+        "roll_t_q",
+        vec![
+            P(L, K::KEY_KPSLASH),
+            P(L, K::KEY_KP1),
+            R(L, K::KEY_KPSLASH),
+            R(L, K::KEY_KP1),
+        ],
+    ));
+    // The same roll, with the layer-tap released after the mod's timeout: the mod was
+    // released in time, but its release was buffered in the layer-taps stage.
+    s.push((
+        "roll_n_o_slow",
+        vec![
+            P(RR, K::KEY_KPASTERISK),
+            Tick(100),
+            P(RR, K::KEY_KP3),
+            R(RR, K::KEY_KPASTERISK),
+            Tick(120),
+            R(RR, K::KEY_KP3),
+        ],
+    ));
+    s.push((
+        "roll_n_o_t",
+        vec![
+            P(RR, K::KEY_KPASTERISK),
+            P(RR, K::KEY_KP3),
+            R(RR, K::KEY_KPASTERISK),
+            P(L, K::KEY_KPSLASH),
+            R(RR, K::KEY_KP3),
+            R(L, K::KEY_KPSLASH),
+        ],
+    ));
     // Hold by timeout.
     s.push(("timeout_r", vec![P(L, K::KEY_KP5), Tick(250), Rep(L, K::KEY_KP5), R(L, K::KEY_KP5)]));
     s.push((
@@ -256,6 +301,7 @@ fn scenarios() -> Vec<(&'static str, Vec<Step>)> {
         vec![
             P(L, K::KEY_KP3),
             P(L, K::KEY_KP8),
+            Tick(250),
             P(RR, K::KEY_KPASTERISK),
             R(RR, K::KEY_KPASTERISK),
             R(L, K::KEY_KP8),
@@ -365,6 +411,39 @@ fn scenarios() -> Vec<(&'static str, Vec<Step>)> {
             R(RR, K::KEY_KP3),
         ],
     ));
+
+    // Only the timeout makes a hold, so these wait past it after the first press.
+    let held = [
+        "hold_r",
+        "hold_s",
+        "hold_t",
+        "hold_e",
+        "hold_n",
+        "hold_i",
+        "layer_a_numbers",
+        "layer_a_all_right",
+        "layer_o_numbers",
+        "layer_a_then_o",
+        "kpdot_shift_right",
+        "z_move_right",
+        "space_shift_left",
+        "slash_move_left",
+        "ctrl_a",
+        "shift_arrow",
+        "hold_x_meta",
+        "hold_dot_meta",
+        "layer_z_move_right",
+        "layer_slash_move_left",
+        "layer_o_all_left",
+        "func_right",
+        "func_left",
+        "kpdot_in_numbers_left",
+    ];
+    for (name, steps) in &mut s {
+        if held.contains(name) {
+            steps.insert(1, Tick(250));
+        }
+    }
     s
 }
 
@@ -416,5 +495,83 @@ fn test_dual_numpad_scenarios() {
     if report != expected {
         std::fs::write("target/numpad_scenarios.txt", &report).unwrap();
         panic!("Output differs from example/dual_numpad/scenarios.txt, see: diff example/dual_numpad/scenarios.txt target/numpad_scenarios.txt");
+    }
+}
+
+// Random mashing of the home rows of both pads, released in any order, without waiting
+// for the timeout: every key must be a tap. The output must be the letters in press
+// order, and nothing else.
+#[test]
+fn test_dual_numpad_random_mashing() {
+    use Key as K;
+    let keys = [
+        (L, K::KEY_KP2, K::KEY_A),
+        (L, K::KEY_KP5, K::KEY_R),
+        (L, K::KEY_KP8, K::KEY_S),
+        (L, K::KEY_KPSLASH, K::KEY_T),
+        (L, K::KEY_TAB, K::KEY_D),
+        (RC, K::KEY_MAIL, K::KEY_H),
+        (RR, K::KEY_KPASTERISK, K::KEY_N),
+        (RR, K::KEY_KP9, K::KEY_E),
+        (RR, K::KEY_KP6, K::KEY_I),
+        (RR, K::KEY_KP3, K::KEY_O),
+    ];
+    let yaml = std::fs::read_to_string("example/dual_numpad/config.yml").unwrap();
+    let config = crate::tests::parse_config_for_test(&yaml);
+    let mut seed: u64 = 0x2545F4914F6CDD1D;
+    let mut rand = move |n: usize| {
+        seed ^= seed << 13;
+        seed ^= seed >> 7;
+        seed ^= seed << 17;
+        (seed % n as u64) as usize
+    };
+
+    for round in 0..2000 {
+        let timer = TimerFd::new(ClockId::CLOCK_MONOTONIC, TimerFlags::empty()).unwrap();
+        let mut handler = make_handler(&config, timer);
+        let mut wm = WMClient::new("none", Box::new(crate::client::null_client::NullClient), false);
+        let mut held: Vec<usize> = vec![];
+        let mut steps: Vec<Event> = vec![];
+        let mut expected: Vec<Key> = vec![];
+        let max_held = 1 + rand(3);
+        for _ in 0..8 {
+            if held.len() >= max_held || (!held.is_empty() && rand(2) == 0) {
+                let i = held.remove(rand(held.len()));
+                steps.push(Event::KeyEvent(dev(keys[i].0), KeyEvent::new(keys[i].1, KeyValue::Release)));
+            }
+            let free: Vec<usize> = (0..keys.len()).filter(|i| !held.contains(i)).collect();
+            let i = free[rand(free.len())];
+            held.push(i);
+            expected.push(keys[i].2);
+            steps.push(Event::KeyEvent(dev(keys[i].0), KeyEvent::new(keys[i].1, KeyValue::Press)));
+        }
+        while !held.is_empty() {
+            let i = held.remove(rand(held.len()));
+            steps.push(Event::KeyEvent(dev(keys[i].0), KeyEvent::new(keys[i].1, KeyValue::Release)));
+        }
+
+        let mut out = String::new();
+        let mut pressed: Vec<Key> = vec![];
+        for ev in steps.clone() {
+            let actions = handler.on_events(vec![ev], &config, &mut wm).unwrap();
+            for a in &actions {
+                if let crate::action::Action::KeyEvent(k) = a {
+                    if k.value == KeyValue::Press {
+                        pressed.push(k.key);
+                    }
+                }
+            }
+            out.push_str(&fmt_actions(&actions));
+        }
+        if pressed != expected {
+            let steps: Vec<String> = steps
+                .iter()
+                .map(|e| match e {
+                    Event::KeyEvent(d, k) => format!("{}:{:?}:{:?}", d.path.display(), k.key, k.value),
+                    _ => unreachable!(),
+                })
+                .collect();
+            panic!("round {round}\nsteps: {steps:#?}\nexpected: {expected:?}\noutput: {out}");
+        }
     }
 }

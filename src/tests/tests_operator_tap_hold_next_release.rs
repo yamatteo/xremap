@@ -106,13 +106,13 @@ fn test_tap_hold_next_release_pre_pressed_release() {
     // Release A. Since A was pressed BEFORE Capslock, it does NOT trigger hold!
     assert_events(handler.map_evs(vec![Event::key_release(Key::KEY_A)]), vec![]);
 
-    // Release Capslock -> TAP!
+    // Release Capslock -> TAP! A is released inside the tap, as it was inside Capslock.
     assert_events(
         handler.map_evs(vec![Event::key_release(Key::KEY_CAPSLOCK)]),
         vec![
             Event::key_press(Key::KEY_ESC),
-            Event::key_release(Key::KEY_ESC),
             Event::key_release(Key::KEY_A),
+            Event::key_release(Key::KEY_ESC),
         ],
     );
 

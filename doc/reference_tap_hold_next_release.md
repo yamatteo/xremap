@@ -127,6 +127,26 @@ experimental_map:
 | Composable with `select:` | ❌ | ✅ |
 | Application-specific | ❌ | ✅ |
 
+### `tap_hold`: only the timeout decides
+
+`tap_hold` (alias `tap-hold`) takes the same parameters, but drops conditions 2 and 3: a key
+pressed and released while `K` is held doesn't make a hold. `K` is a tap if it's released
+before the timeout, and a hold only when the timeout expires, so fast typing never gives a
+hold, in any order. Keys pressed meanwhile are replayed after the decision. A chord like
+`K + A` must hold `K` for the timeout before `A` is pressed.
+
+```yml
+pipeline:
+  - stage:
+      homerow:
+        remap:
+          capslock:
+            tap_hold:
+              tap: esc
+              hold: leftctrl
+              timeout: 200
+```
+
 ### Relationship to KMonad
 
 This feature is a direct implementation of KMonad's `tap-hold-next-release` button.

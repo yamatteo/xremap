@@ -159,7 +159,7 @@ pub enum MainAction {
 ///  - Creates output device.
 ///  - Enters infinite event-loop that listens on input devices.
 pub fn xremap_cli(mut plugin: impl Plugin) -> anyhow::Result<()> {
-    env_logger::init();
+    env_logger::Builder::from_default_env().format_timestamp_millis().init();
 
     let Args {
         device: device_filter,

@@ -18,6 +18,8 @@ pub enum StageOperator {
     OneShot(Key),
     #[serde(deserialize_with = "deserialize_select")]
     Select(Vec<StageOperator>),
+    #[serde(deserialize_with = "deserialize_tap_hold")]
+    TapHold(TapHoldNextRelease),
     #[serde(deserialize_with = "deserialize_tap_hold_next_release")]
     TapHoldNextRelease(TapHoldNextRelease),
     // The modmap operators. PressReleaseKey must be last, because all its fields are optional.
@@ -38,6 +40,18 @@ pub fn deserialize_select<'de, D: Deserializer<'de>>(deserializer: D) -> Result<
     Ok(deserialize_single_field::<D, Vec<StageOperator>>(deserializer, "select")?)
 }
 
+// Like tap_hold_next_release, but only the timeout decides: released before it is a
+// tap, even if other keys were pressed and released meanwhile.
+pub fn deserialize_tap_hold<'de, D: Deserializer<'de>>(deserializer: D) -> Result<TapHoldNextRelease, D::Error> {
+    let mut map = HashMap::<String, TapHoldNextRelease>::deserialize(deserializer)?;
+    if let Some(value) = map.remove("tap_hold").or_else(|| map.remove("tap-hold")) {
+        if map.is_empty() {
+            return Ok(value);
+        }
+    }
+    Err(serde::de::Error::custom("expected tap_hold or tap-hold"))
+}
+
 pub fn deserialize_tap_hold_next_release<'de, D: Deserializer<'de>>(
     deserializer: D,
 ) -> Result<TapHoldNextRelease, D::Error> {
@@ -47,7 +61,10 @@ pub fn deserialize_tap_hold_next_release<'de, D: Deserializer<'de>>(
         .or_else(|| map.remove("tap-hold-next-release"))
     {
         if map.is_empty() {
-            return Ok(value);
+            return Ok(TapHoldNextRelease {
+                next_release: true,
+                ..value
+            });
         }
     }
     Err(serde::de::Error::custom("expected tap_hold_next_release or tap-hold-next-release"))
@@ -87,6 +104,9 @@ pub struct TapHoldNextRelease {
         deserialize_with = "deserialize_optional_key_or_keys"
     )]
     pub timeout_button: Option<Vec<Key>>,
+    // A key pressed and released while undecided makes it a hold.
+    #[serde(skip)]
+    pub next_release: bool,
 }
 
 #[derive(Clone, Debug, Deserialize)]

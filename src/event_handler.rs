@@ -106,7 +106,9 @@ impl EventHandler {
             return self.on_staged_event(event, config, wmclient, mouse_movement_collection);
         }
 
-        // Ticks never leave a stage, so every stage must be given its own.
+        // Ticks never leave a stage, so every stage must be given its own. But not while
+        // this stage holds back events: a later stage must not time out on a key whose
+        // release it hasn't seen yet. Its timeouts are checked on the next tick.
         let is_tick = matches!(event, Event::Tick);
         let emitted = self.stages[index].map_events(vec![event], &self.mode, &config.default_mode, wmclient);
 
@@ -117,7 +119,7 @@ impl EventHandler {
             self.run_stages(index + 1, event, config, wmclient, mouse_movement_collection)?;
         }
 
-        if is_tick {
+        if is_tick && !self.stages[index].is_buffering() {
             self.run_stages(index + 1, Event::Tick, config, wmclient, mouse_movement_collection)?;
         }
         Ok(())

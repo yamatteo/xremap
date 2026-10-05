@@ -47,7 +47,7 @@ Every operator can be used in any stage:
 - key to key(s): `A: B`, `A: [B, C]`
 - [multi-purpose key](reference_multipurpose_key.md): `{ held: ..., alone: ... }`
 - [press/release key](reference_press_release_key.md): `{ press: ..., release: ..., repeat: ..., skip_key_event: ... }`
-- [tap-hold-next-release](reference_tap_hold_next_release.md), [double tap](reference_double_tap.md),
+- [tap-hold-next-release and tap-hold](reference_tap_hold_next_release.md), [double tap](reference_double_tap.md),
   [oneshot](reference_oneshot.md), [throttle](reference_throttle.md), [select](reference_select.md)
 
 ### How a stage works

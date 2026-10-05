@@ -92,12 +92,12 @@ pipeline:
         mode: [default, move_left, move_right, numbers_right]
         remap:
           A:                    # hold for right-pad numbers
-            tap_hold_next_release:
+            tap_hold:
               tap: A
               hold: { set_mode: numbers_right }
               timeout: 200
           Z:                    # hold for right-pad move mode
-            tap_hold_next_release:
+            tap_hold:
               tap: Z
               hold: { set_mode: move_right }
               timeout: 200
@@ -108,12 +108,12 @@ pipeline:
         mode: [default, move_left, move_right, numbers_left]
         remap:
           O:                    # hold for left-pad numbers
-            tap_hold_next_release:
+            tap_hold:
               tap: O
               hold: { set_mode: numbers_left }
               timeout: 200
           SLASH:                # hold for left-pad move mode
-            tap_hold_next_release:
+            tap_hold:
               tap: SLASH
               hold: { set_mode: move_left }
               timeout: 200
@@ -122,12 +122,12 @@ pipeline:
         mode: [default]
         remap:
           Q:                    # hold for func, used on the right side
-            tap_hold_next_release:
+            tap_hold:
               tap: Q
               hold: { set_mode: func }
               timeout: 200
           SEMICOLON:            # hold for func, used on the left side
-            tap_hold_next_release:
+            tap_hold:
               tap: SEMICOLON
               hold: { set_mode: func }
               timeout: 200
@@ -224,42 +224,42 @@ pipeline:
       homerow:
         remap:
           R:
-            tap_hold_next_release:
+            tap_hold:
               tap: R
               hold: LEFTALT
               timeout: 200
           S:
-            tap_hold_next_release:
+            tap_hold:
               tap: S
               hold: LEFTSHIFT
               timeout: 200
           E:
-            tap_hold_next_release:
+            tap_hold:
               tap: E
               hold: RIGHTSHIFT
               timeout: 200
           N:
-            tap_hold_next_release:
+            tap_hold:
               tap: N
               hold: RIGHTCTRL
               timeout: 200
           I:
-            tap_hold_next_release:
+            tap_hold:
               tap: I
               hold: RIGHTALT
               timeout: 200
           X:
-            tap_hold_next_release:
+            tap_hold:
               tap: X
               hold: LEFTMETA
               timeout: 200
           DOT:
-            tap_hold_next_release:
+            tap_hold:
               tap: DOT
               hold: RIGHTMETA
               timeout: 200
           T:
-            tap_hold_next_release:
+            tap_hold:
               tap: T
               hold: LEFTCTRL
               timeout: 200
